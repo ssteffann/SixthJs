@@ -1,45 +1,72 @@
 (function() {
-  const ctrlAttr = 'data-controller';
-  const modelAttr = 'data-model';
+  const CTRL_ATTR = 'data-controller';
+  const MODEL_ATTR = 'data-model';
 
+  let self = {}
+
+  window.sixth = self;
 
   class Scope {
-    constructor(){
-      this.init = '';
+    constructor(){}
+
+    getModel() {
+      return Object.keys(this)
+        .reduce((mappedData, key) => {
+          mappedData[key] = [];
+
+          return mappedData
+        }, {});
     }
   };
 
   class Controller {
-    constructor(name, callback) {
+    constructor(name, callback, scope) {
       this.ctrlName = name;
+      this.scope = scope;
       this.callback = callback;
-      this.ctrlElement = document.querySelector(`[${ctrlAttr}=${name}]`);
-      this.modelElements = this.ctrlElement.querySelectorAll(`[${modelAttr}]`)
+      this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
+      this.modelElements = this.bindModel();
+    }
+
+    /**
+     * Sort each element with data-model attribut to it model in scope
+     * @returns {*}
+     */
+    bindModel(){
+      let domElements = this.ctrlElement.querySelectorAll(`[${MODEL_ATTR}]`)
+        , modelElements = this.scope.getModel();
+
+      for(let key in domElements) {
+        let element = domElements[key];
+        let name = element.tagName && element.getAttribute(MODEL_ATTR);
+
+        if(!modelElements.hasOwnProperty(name)) return;
+
+        modelElements[name].push(element);
+      }
+
+      return modelElements;
     }
 
     render (name, value) {
       for(let key in this.modelElements) {
         let element = this.modelElements[key];
 
-        if(element.tagName
-          && element.tagName !== 'INPUT'
-          && element.getAttribute(modelAttr) === name)
-        {
-          console.log('render', value)
-          element.innerHTML = value;
+        if (element.tagName && element.getAttribute(MODEL_ATTR) === name) {
+          if (element.tagName === 'INPUT') {
+            element.value = value;
+          } else {
+            element.innerHTML = value;
+          }
+
         }
 
       }
     }
   };
 
-  let self = {}
-  window.sixth = self;
-
 
   self.controller = function(name, callback) {
-    let ctrl = new Controller(name, callback);
-
     let scope = new Proxy(new Scope(),{
       set: function(model, property, value) {
         let oldValue = model[property];
@@ -47,12 +74,14 @@
         if(oldValue === value) return;
 
         model[property] = value;
-        ctrl.render(property, value)
+        //ctrl.render(property, value)
 
       }
     });
-
     callback.call(scope)
+
+    let ctrl = new Controller(name, callback, scope);
+
 
 
     for(let key in ctrl.modelElements) {
@@ -60,7 +89,7 @@
 
       if(element.tagName === 'INPUT'){
         element.addEventListener('keyup', function(){
-          scope[element.getAttribute(modelAttr)] = this.value;
+          scope[element.getAttribute(MODEL_ATTR)] = this.value;
         })
       }
     }
