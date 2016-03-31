@@ -20,12 +20,26 @@
   };
 
   class Controller {
-    constructor(name, callback, scope) {
+    constructor(name, callback) {
       this.ctrlName = name;
-      this.scope = scope;
+      this.isClean = true;
+
+      this.scope = new Proxy(new Scope(),{
+        set: (model, property, value) => {
+          let oldValue = model[property];
+
+          if(oldValue === value) return;
+
+          console.log('property', property)
+          model[property] = value;
+
+          oldValue && this.render(property, value)
+        }
+      });
+
       this.callback = callback;
       this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
-      this.modelElements = this.bindModel();
+      this.bindModel();
     }
 
     /**
@@ -33,69 +47,53 @@
      * @returns {*}
      */
     bindModel(){
-      let domElements = this.ctrlElement.querySelectorAll(`[${MODEL_ATTR}]`)
-        , modelElements = this.scope.getModel();
+      let testFunction = function (name){
+        return function(){
+          console.log('ctrl.scope[name]', name, this.value)
+          ctrl.scope[name] = this.value;
+        }
+      }
+      let ctrl = this;
+      this.callback.call(this.scope);
+
+      let domElements = this.ctrlElement.querySelectorAll(`[${MODEL_ATTR}]`);
+      this.modelElements = this.scope.getModel();
 
       for(let key in domElements) {
         let element = domElements[key];
         let name = element.tagName && element.getAttribute(MODEL_ATTR);
 
-        if(!modelElements.hasOwnProperty(name)) return;
+        if(!this.modelElements.hasOwnProperty(name)) return;
 
-        modelElements[name].push(element);
-      }
+        this.modelElements[name].push(element);
 
-      return modelElements;
-    }
-
-    render (name, value) {
-      for(let key in this.modelElements) {
-        let element = this.modelElements[key];
-
-        if (element.tagName && element.getAttribute(MODEL_ATTR) === name) {
-          if (element.tagName === 'INPUT') {
-            element.value = value;
-          } else {
-            element.innerHTML = value;
-          }
-
+        if (element.tagName === 'INPUT') {
+          element.addEventListener('keyup', testFunction(name))
         }
 
+        this.render(name, this.scope[name]);
       }
+    }
+
+    render(name, value) {
+      this.modelElements[name].forEach((element) => {
+        if (element.tagName === 'INPUT') {
+          element.value = value;
+        } else {
+          element.innerHTML = value;
+        }
+      });
     }
   };
 
 
   self.controller = function(name, callback) {
-    let scope = new Proxy(new Scope(),{
-      set: function(model, property, value) {
-        let oldValue = model[property];
 
-        if(oldValue === value) return;
-
-        model[property] = value;
-        //ctrl.render(property, value)
-
-      }
-    });
-    callback.call(scope)
-
-    let ctrl = new Controller(name, callback, scope);
+    let ctrl = new Controller(name, callback);
 
 
 
-    for(let key in ctrl.modelElements) {
-      let element = ctrl.modelElements[key]
 
-      if(element.tagName === 'INPUT'){
-        element.addEventListener('keyup', function(){
-          scope[element.getAttribute(MODEL_ATTR)] = this.value;
-        })
-      }
-    }
-
-
-    console.log('scope', scope)
     console.log('ctrl', ctrl)
   }
 
