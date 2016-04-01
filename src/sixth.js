@@ -6,6 +6,9 @@
 
   window.sixth = self;
 
+  /**
+   * Work in progress
+   */
   class Scope {
     constructor(){}
 
@@ -19,21 +22,24 @@
     }
   };
 
+  /**
+   * Controller class that bind model and view
+   */
   class Controller {
     constructor(name, callback) {
       this.ctrlName = name;
-      this.isClean = true;
 
       this.scope = new Proxy(new Scope(),{
         set: (model, property, value) => {
           let oldValue = model[property];
 
-          if(oldValue === value) return;
+          if(oldValue === value) return true;
 
-          console.log('property', property)
           model[property] = value;
 
           oldValue && this.render(property, value)
+
+          return true;
         }
       });
 
@@ -47,12 +53,6 @@
      * @returns {*}
      */
     bindModel(){
-      let testFunction = function (name){
-        return function(){
-          console.log('ctrl.scope[name]', name, this.value)
-          ctrl.scope[name] = this.value;
-        }
-      }
       let ctrl = this;
       this.callback.call(this.scope);
 
@@ -68,7 +68,9 @@
         this.modelElements[name].push(element);
 
         if (element.tagName === 'INPUT') {
-          element.addEventListener('keyup', testFunction(name))
+          element.addEventListener('keyup', function(){
+            ctrl.scope[name] = this.value;
+          });
         }
 
         this.render(name, this.scope[name]);
@@ -88,11 +90,7 @@
 
 
   self.controller = function(name, callback) {
-
     let ctrl = new Controller(name, callback);
-
-
-
 
     console.log('ctrl', ctrl)
   }
