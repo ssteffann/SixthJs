@@ -61,30 +61,92 @@
 
       for(let key in domElements) {
         let element = domElements[key];
-        let name = element.tagName && element.getAttribute(MODEL_ATTR);
+
+        if(!element.tagName) return;
+
+        let name = element.getAttribute(MODEL_ATTR);
 
         if(!this.modelView.hasOwnProperty(name)) return;
 
         this.modelView[name].push(element);
 
-        if (element.tagName === 'INPUT') {
-          element.addEventListener('keyup', () => {
-            this.scope[name] = element.value;
-          });
+        if (element.value !== undefined) {
+          let event = this.getEvent(this.scope, element.type, name);
+
+          element.addEventListener(event.name, event.fn, false);
         }
 
         this.isBinded = true;
         this.render(name, this.scope[name]);
       }
-    }
+    };
 
+    getEvent(scope, type, name) {
+      let eventsTypes = {
+        default: () => ({
+          name: 'keyup',
+          fn: (event) => {
+            scope[name] = event.target.value;
+          }
+        }),
+        checkbox: () => ({
+          name: 'change',
+          fn: (event) => {
+            scope[name] = event.target.checked;
+          }
+        }),
+        radio: () => ({
+          name: 'change',
+          fn: (event) => {
+            scope[name] = event.target.value;
+          }
+        })
+      }
+
+      return eventsTypes.hasOwnProperty(type)
+        ? eventsTypes[type]()
+        : eventsTypes.default();
+
+    };
+
+    //TODO: Need to add support for change and click, and also for select tag,
+    // and check the checkbox, it doesn't work properly
+    
     render(name, value) {
-      this.modelView[name].forEach((element) => {
-        if (element.tagName === 'INPUT' && !element.value) {
-           element.value = value;
-        } else {
-          element.innerHTML = value;
+      let elementsType = {
+        checkbox: (element, value) => {
+          console.log('!!value', !!value)
+          element.setAttribute('checked', !!value);
+        },
+        radio: (element, value) => {
+          if (element.value === value && !element.checked) {
+            element.setAttribute('checked', true);
+          }
+        },
+        default: (element, value) => {
+          if (element.value) {
+            return;
+          }
+
+          element.value = value;
         }
+      };
+
+      this.modelView[name].forEach((element) => {
+
+        try {
+          if (element.value !== undefined) {
+            elementsType[element.type]
+              ? elementsType[element.type](element, value)
+              : elementsType.default(element, value)
+          } else {
+            element.innerHTML = value;
+          }
+
+        } catch (error) {
+          console.log(error)
+        }
+
       });
     }
   };
