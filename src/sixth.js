@@ -6,6 +6,11 @@
 
   window.sixth = self;
 
+
+  let utils = {
+    isUndefined: (value) => typeof value === 'undefined',
+    isDefined: (value) => typeof value !== 'undefined'
+  }
   /**
    * Work in progress
    */
@@ -83,19 +88,25 @@
 
     getEvent(scope, type, name) {
       let eventsTypes = {
-        default: () => ({
+        'default': () => ({
           name: 'keyup',
           fn: (event) => {
             scope[name] = event.target.value;
           }
         }),
-        checkbox: () => ({
+        'checkbox': () => ({
           name: 'change',
           fn: (event) => {
             scope[name] = event.target.checked;
           }
         }),
-        radio: () => ({
+        'radio': () => ({
+          name: 'change',
+          fn: (event) => {
+            scope[name] = event.target.value;
+          }
+        }),
+        'select-one': () => ({
           name: 'change',
           fn: (event) => {
             scope[name] = event.target.value;
@@ -111,7 +122,7 @@
 
     //TODO: Need to add support for change and click, and also for select tag,
     // and check the checkbox, it doesn't work properly
-    
+
     render(name, value) {
       let elementsType = {
         checkbox: (element, value) => {
