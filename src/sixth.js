@@ -5,8 +5,7 @@
   let self = {}
 
   window.sixth = self;
-
-
+  
   let utils = {
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined'
@@ -75,7 +74,7 @@
 
         this.modelView[name].push(element);
 
-        if (element.value !== undefined) {
+        if (utils.isDefined(element.value)) {
           let event = this.getEvent(this.scope, element.type, name);
 
           element.addEventListener(event.name, event.fn, false);
@@ -87,30 +86,30 @@
     };
 
     getEvent(scope, type, name) {
+      let setValue = function(event) {
+        this.isTouched = true;
+        scope[name] = event.target.value;
+      }
+
       let eventsTypes = {
         'default': () => ({
           name: 'keyup',
-          fn: (event) => {
-            scope[name] = event.target.value;
-          }
+          fn: setValue
         }),
         'checkbox': () => ({
           name: 'change',
-          fn: (event) => {
+          fn: function(event) {
+            this.isTouched = true;
             scope[name] = event.target.checked;
           }
         }),
         'radio': () => ({
           name: 'change',
-          fn: (event) => {
-            scope[name] = event.target.value;
-          }
+          fn: setValue
         }),
         'select-one': () => ({
           name: 'change',
-          fn: (event) => {
-            scope[name] = event.target.value;
-          }
+          fn: setValue
         })
       }
 
@@ -126,7 +125,6 @@
     render(name, value) {
       let elementsType = {
         checkbox: (element, value) => {
-          console.log('!!value', !!value)
           element.setAttribute('checked', !!value);
         },
         radio: (element, value) => {
@@ -135,10 +133,6 @@
           }
         },
         default: (element, value) => {
-          if (element.value) {
-            return;
-          }
-
           element.value = value;
         }
       };
@@ -146,10 +140,14 @@
       this.modelView[name].forEach((element) => {
 
         try {
-          if (element.value !== undefined) {
+          if (utils.isDefined(element.value)) {
+
+            if(element.isTouched) return element.isTouched = false;
+
             elementsType[element.type]
               ? elementsType[element.type](element, value)
-              : elementsType.default(element, value)
+              : elementsType.default(element, value);
+
           } else {
             element.innerHTML = value;
           }
