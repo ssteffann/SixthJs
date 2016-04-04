@@ -33,35 +33,40 @@
     constructor(name, callback) {
       this.ctrlName = name;
       this.isBinded = false;
+      this.callback = callback;
+      this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
+      this.bindElements();
+    }
 
-      this.scope = new Proxy(new Scope(),{
+
+    bindModel(scope) {
+      console.log('scope', scope)
+      this.scope = new Proxy(scope,{
         set: (model, property, value) => {
           let oldValue = model[property];
-
+          console.log('render')
           if(oldValue === value) return true;
 
           model[property] = value;
 
-          this.isBinded && this.render(property, value)
+          this.render(property, value)
 
           return true;
         }
       });
-
-      this.callback = callback;
-      this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
-      this.bindModel();
     }
-
     /**
      * Sort each element with data-model attribut to it model in scope
      * @returns {*}
      */
-    bindModel(){
-      let domElements = this.ctrlElement.querySelectorAll(`[${MODEL_ATTR}]`);
+    bindElements(){
+      let domElements = this.ctrlElement.querySelectorAll(`[${MODEL_ATTR}]`)
+        , scope = new Scope();
 
-      this.callback.call(this.scope);
-      this.modelView = this.scope.getModel();
+      this.callback.call(scope);
+      this.modelView = scope.getModel();
+
+      this.bindModel(scope);
 
       for(let key in domElements) {
         let element = domElements[key];
@@ -80,7 +85,6 @@
           element.addEventListener(event.name, event.fn, false);
         }
 
-        this.isBinded = true;
         this.render(name, this.scope[name]);
       }
     };
@@ -89,7 +93,7 @@
       let setValue = function(event) {
         this.isTouched = true;
         scope[name] = event.target.value;
-      }
+      };
 
       let eventsTypes = {
         'default': () => ({
@@ -125,7 +129,8 @@
     render(name, value) {
       let elementsType = {
         checkbox: (element, value) => {
-          element.setAttribute('checked', !!value);
+          console.log('value', !!value)
+          element.setAttribute('checked', value);
         },
         radio: (element, value) => {
           if (element.value === value && !element.checked) {
