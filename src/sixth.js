@@ -10,6 +10,27 @@
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined'
   }
+
+  function renderInputType(element, value){
+    let elementsType = {
+      checkbox: (element, value) => {
+        console.log('value', !!value)
+        element.setAttribute('checked', value);
+      },
+      radio: (element, value) => {
+        if (element.value === value && !element.checked) {
+          element.setAttribute('checked', true);
+        }
+      },
+      default: (element, value) => {
+        element.value = value;
+      }
+    };
+
+    elementsType.hasOwnProperty(element.type)
+      ? elementsType[element.type](element, value)
+      : elementsType.default(element, value);
+  }
   /**
    * Work in progress
    */
@@ -38,13 +59,12 @@
       this.bindElements();
     }
 
-
     bindModel(scope) {
       console.log('scope', scope)
       this.scope = new Proxy(scope,{
         set: (model, property, value) => {
           let oldValue = model[property];
-          console.log('render')
+
           if(oldValue === value) return true;
 
           model[property] = value;
@@ -127,32 +147,13 @@
     // and check the checkbox, it doesn't work properly
 
     render(name, value) {
-      let elementsType = {
-        checkbox: (element, value) => {
-          console.log('value', !!value)
-          element.setAttribute('checked', value);
-        },
-        radio: (element, value) => {
-          if (element.value === value && !element.checked) {
-            element.setAttribute('checked', true);
-          }
-        },
-        default: (element, value) => {
-          element.value = value;
-        }
-      };
-
       this.modelView[name].forEach((element) => {
-
         try {
           if (utils.isDefined(element.value)) {
 
             if(element.isTouched) return element.isTouched = false;
 
-            elementsType[element.type]
-              ? elementsType[element.type](element, value)
-              : elementsType.default(element, value);
-
+            renderInputType(element, value);
           } else {
             element.innerHTML = value;
           }
@@ -160,7 +161,6 @@
         } catch (error) {
           console.log(error)
         }
-
       });
     }
   };
