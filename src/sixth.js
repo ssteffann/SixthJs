@@ -1,11 +1,24 @@
 (function() {
   const CTRL_ATTR = 'data-controller';
   const MODEL_ATTR = 'data-model';
+  const BIND_ATTR = 'data-bind';
+
+  //TODO: Implement this types of bindings
+
+
+  let bindTypes = {
+    'model': {},
+    'text': {},
+    'click': {},
+    'change': {},
+    'if': {},
+    'repeat':{}
+  }
 
   let self = {}
 
   window.sixth = self;
-  
+
   let utils = {
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined'
@@ -60,7 +73,6 @@
     }
 
     bindModel(scope) {
-      console.log('scope', scope)
       this.scope = new Proxy(scope,{
         set: (model, property, value) => {
           let oldValue = model[property];
@@ -80,7 +92,9 @@
      * @returns {*}
      */
     bindElements(){
-      let domElements = this.ctrlElement.querySelectorAll(`[${MODEL_ATTR}]`)
+      if(!this.ctrlElement) return;
+
+      let domElements = this.ctrlElement.querySelectorAll(`[${BIND_ATTR}]`)
         , scope = new Scope();
 
       this.callback.call(scope);

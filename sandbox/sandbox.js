@@ -13,5 +13,19 @@ sixth.controller('testController', function() {
 
   let myVar = 'testere';
 
-  //setInterval(() => this.test++, 1000);
+  this.myObj = {
+    property: 'work'
+  }
+
+
+  this.myFunction = function(){
+    console.log('me Function');
+  }
+
+  setInterval(() => this.test++, 1000);
+});
+
+
+sixth.controller('childColtroller', function() {
+  this.child = 'child';
 })

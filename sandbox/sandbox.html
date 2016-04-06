@@ -10,15 +10,15 @@
 <div data-controller="testController">
   <div>
     <div>
-      <input type="text" data-model="test">
+      <input type="text" data-bind="model:test">
     </div>
 
-    <p>Result: <span data-model="test"></span></p>
+    <p>Result: <span data-bind="text:test"></span></p>
   </div>
 
   <div>
     <div>
-      <select data-model="select">
+      <select data-bind="model:select">
         <option></option>
         <option value="test">Test</option>
         <option value="testare">Testare</option>
@@ -26,40 +26,50 @@
       </select>
     </div>
 
-    <p>Result: <span data-model="select"></span></p>
+    <p>Result: <span data-bind="text:select"></span></p>
   </div>
 
   <div>
-    <textarea data-model="textarea"></textarea>
+    <textarea data-bind="model:textarea"></textarea>
 
-    <p>Result: <span data-model="textarea"></span></p>
-  </div>
-
-  <div>
-    <div>
-      <input type="checkbox" data-model="checkbox"> Checbox
-      <input type="checkbox" data-model="checkbox2"> Checkbox2
-    </div>
-
-    <p>Result Checbox: <span data-model="checkbox"></span></p>
-    <p>Result Checkbox2: <span data-model="checkbox2"></span></p>
-
+    <p>Result: <span data-bind="text:textarea"></span></p>
   </div>
 
   <div>
     <div>
-      <input type="radio" name="radio" data-model="radio" value="Radio"> Radio
-      <input type="radio" name="radio" data-model="radio" value="Radio3"> Radio3
+      <input type="checkbox" data-bind="model:checkbox"> Checbox
+      <input type="checkbox" data-bind="model:checkbox2"> Checkbox2
     </div>
 
-    <p>Result: <span data-model="radio"></span></p>
+    <p>Result Checbox: <span data-bind="text:checkbox"></span></p>
+    <p>Result Checkbox2: <span data-bind="text:checkbox2"></span></p>
 
   </div>
 
+  <div>
+    <div>
+      <input type="radio" name="radio" data-bind="model:radio" value="Radio"> Radio
+      <input type="radio" name="radio" data-bind="model:radio" value="Radio3"> Radio3
+    </div>
+
+    <p>Result: <span data-bind="text:radio"></span></p>
+
+
+  </div>
+
+  <div data-controller="childColtroller">
+    <div>
+      <div>
+        <input type="text" data-bind="model:child">
+      </div>
+
+      <p>Result: <span data-bind="text:child"></span></p>
+    </div>
+  </div>
 </div>
 
 
-<script src="../src/sixth.js"></script>
+<script src="../src/sixth_v2.js"></script>
 <script src="sandbox.js"></script>
 
 </body>
