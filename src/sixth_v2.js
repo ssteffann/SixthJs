@@ -73,8 +73,12 @@
       }
     },
     click: {
-      init: () => {
+      init: (element, scope, property) => {
+        if (typeof scope[property] !== 'function') {
+          return new logError(`SixthJs: ${property} is not a function.`)
+        }
 
+        element.addEventListener('click', () => scope[property](), false);
       },
       render:() => true
     },
@@ -192,6 +196,7 @@
 
         let data = parseAttrData(element.getAttribute(BIND_ATTR));
 
+        //TODO Change this to register all data-bindings from dom
         if(!this.modelView.hasOwnProperty(data.value)) return;
 
         BINDING_TYPES[data.type].init(element, this.scope, data.value);

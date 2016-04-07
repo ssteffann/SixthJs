@@ -19,14 +19,21 @@ sixth.controller('testController', function() {
   }
 
 
-  this.myFunction = function(){
-    console.log('me Function');
-  }
 
   setInterval(() =>  this.counter++, 1000);
 });
 
 
 sixth.controller('childColtroller', function() {
+  this.function ='';
+  this.clickButton = function(){
+    this.function = 'Yeyy you clicked the button'
+    console.log('clickButton');
+  }
+
+  this.clickLink = function() {
+    this.function = 'Yeyy you clicked the link'
+    console.log('clickLink');
+  }
   this.child = 'child';
 })
