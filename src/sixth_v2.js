@@ -6,15 +6,104 @@
   const CTRL_ATTR = 'data-controller';
   const MODEL_ATTR = 'data-model';
   const BIND_ATTR = 'data-bind';
-  const BINDING_TYPES = ['model', 'text', 'click', 'change', 'if', 'repeat', 'view', 'controller'];
+  const BINDING_TYPES = {
+    model: {
+      init: (element, scope, property) => {
+        let setValue
+          , eventsTypes
+          , event;
 
+        if(utils.isUndefined(element.value)) {
+          return new logError(`SixthJs: Bind type model can't be applied on this element`)
+        }
+
+        setValue = function(event) {
+          this.isTouched = true;
+          scope[property] = event.target.value;
+        };
+
+        eventsTypes = {
+          'checkbox': () => ({
+            name: 'change',
+            fn: function(event) {
+              this.isTouched = true;
+              scope[property] = event.target.checked;
+            }
+          }),
+          'radio': () => ({
+            name: 'change',
+            fn: setValue
+          }),
+          'select-one': () => ({
+            name: 'change',
+            fn: setValue
+          })
+        }
+
+        event = eventsTypes.hasOwnProperty(element.type)
+          ? eventsTypes[element.type]()
+          : { name: 'keyup', fn: setValue };
+
+        element.addEventListener(event.name, event.fn, false);
+      },
+      render:(element, value) => {
+        let elementsType = {
+          checkbox: (element, value) => {
+            element.setAttribute('checked', value);
+          },
+          radio: (element, value) => {
+            if (element.value === value && !element.checked) {
+              element.setAttribute('checked', true);
+            }
+          },
+          default: (element, value) => {
+            element.value = value;
+          }
+        };
+
+        elementsType.hasOwnProperty(element.type)
+          ? elementsType[element.type](element, value)
+          : elementsType.default(element, value);
+      }
+    },
+    text: {
+      init: () => true,
+      render:(element, value) => {
+        element.innerHTML = value;
+      }
+    },
+    click: {
+      init: () => {
+
+      },
+      render:() => true
+    },
+    change: {
+      init: () => true,
+
+    },
+    if: {
+      init: () => true,
+      render:() => true
+    },
+    repeat: {
+      init: () => true,
+      render:() => true
+    },
+    view: {
+      init: () => true,
+      render:() => true
+    },
+    controller: {
+      init: () => true,
+      render:() => true
+    }
+  };
 
   let utils = {
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined'
   }
-
-  //TODO: Implement this types of bindings
 
   class logError {
     constructor(message) {
@@ -30,32 +119,10 @@
       value: data[1].trim()
     }
 
-    return BINDING_TYPES.find((type) => type === obj.type)
+    return BINDING_TYPES.hasOwnProperty(obj.type)
       ? obj
       : new logError('Invalid syntax in binding: ' + attrValue)
   };
-
-  function renderInputType(element, value){
-    let elementsType = {
-      checkbox: (element, value) => {
-        console.log('value', !!value)
-        element.setAttribute('checked', value);
-      },
-      radio: (element, value) => {
-        if (element.value === value && !element.checked) {
-          element.setAttribute('checked', true);
-        }
-      },
-      default: (element, value) => {
-        element.value = value;
-      }
-    };
-
-    elementsType.hasOwnProperty(element.type)
-      ? elementsType[element.type](element, value)
-      : elementsType.default(element, value);
-  }
-
 
   class Scope {
     constructor(){}
@@ -80,134 +147,74 @@
       this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
     }
 
-    buildScope() {
-      this.$scope = new Scope();
-
-      this.callback.call(this.$scope);
-      this.modelView = this.$scope.getModel();
-    };
-
-    getEvent(type, name) {
-      let that = this;
-      let setValue = function(event) {
-        this.isTouched = true;
-        that.scope[name] = event.target.value;
-      };
-
-      let eventsTypes = {
-        'default': () => ({
-          name: 'keyup',
-          fn: setValue
-        }),
-        'checkbox': () => ({
-          name: 'change',
-          fn: function(event) {
-            this.isTouched = true;
-            that.scope[name] = event.target.checked;
-          }
-        }),
-        'radio': () => ({
-          name: 'change',
-          fn: setValue
-        }),
-        'select-one': () => ({
-          name: 'change',
-          fn: setValue
-        })
-      }
-
-      return eventsTypes.hasOwnProperty(type)
-        ? eventsTypes[type]()
-        : eventsTypes.default();
-    };
-
-    renderViewModel(property, value) {
-      if(!this.modelView[property].model) return;
-
-      this.modelView[property].model.forEach((element) => {
-        if(element.isTouched) return element.isTouched = false;
-
-        renderInputType(element, value);
-      })
-    };
-
-    renderText(property, value){
-      if(!this.modelView[property].text) return;
-
-      this.modelView[property].text.forEach((element) => {
-        element.innerHTML = value;
-      })
-    }
-
-    render(property, value){
-      this.renderViewModel(property, value);
-      this.renderText(property, value);
-    }
-
     bindModel() {
-      this.scope = new Proxy(this.$scope,{
+      this.scope = new Proxy(new Scope(),{
         set: (model, property, value) => {
           let oldValue = model[property];
-          console.log('set', value);
           if(oldValue === value) return true;
 
           model[property] = value;
 
-          console.log('set', value);
-          this.render(property, value);
+          this.render('model', property, value);
+          this.render('text', property, value);
 
           return true;
         }
       });
+
+      this.callback.call(this.scope);
+      this.modelView = this.scope.getModel();
     }
+
+    render(type, property, value){
+      if(!this.modelView || !this.modelView[property][type]) return;
+
+      this.modelView[property][type].forEach((element) => {
+        BINDING_TYPES[type].render(element, value);
+      })
+    };
+
+    getdomElemens() {
+      return this.ctrlElement
+        ? this.ctrlElement.querySelectorAll(`[${BIND_ATTR}]`)
+        : []
+    };
+
     /**
      * Sort each element with data-model attribut to it model in scope
      * @returns {*}
      */
-    bindElements(){
-      if(!this.ctrlElement) return;
-      let domElements = this.ctrlElement.querySelectorAll(`[${BIND_ATTR}]`)
+    bindElements(elements){
+      for (let i = 0, length = elements.length; i < length; i++) {
+        let element = elements[i];
 
-      for (let i = 0, length = domElements.length; i < length; i++) {
-        let element = domElements[i];
-
-        if (!element.tagName) {
-          return;
-        }
+        if (!element.tagName) return;
 
         let data = parseAttrData(element.getAttribute(BIND_ATTR));
 
         if(!this.modelView.hasOwnProperty(data.value)) return;
 
+        BINDING_TYPES[data.type].init(element, this.scope, data.value);
+
         this.modelView[data.value][data.type]
           ? this.modelView[data.value][data.type].push(element)
-          : this.modelView[data.value][data.type] = [element]
+          : this.modelView[data.value][data.type] = [element];
 
-
-        if (utils.isDefined(element.value) && data.type === 'model') {
-          let event = this.getEvent(element.type, data.value);
-
-          element.addEventListener(event.name, event.fn, false);
-        }
-
-        console.log('parsedData', data);
-
-        // this.bindModel(scope);
-         this.render(data.value, this.$scope[data.value]);
+        BINDING_TYPES[data.type].render(element, this.scope[data.value]);
       }
     };
-
   };
+
+
 
 
   self.controller = function(name, callback) {
     let ctrl = new Controller(name, callback);
-    ctrl.buildScope();
-
-    ctrl.bindElements();
+    let elements = ctrl.getdomElemens();
 
     ctrl.bindModel();
 
+    ctrl.bindElements(elements);
 
     console.log('ctrl', ctrl)
   }

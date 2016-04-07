@@ -8,13 +8,16 @@
 <h1>Hello World</h1>
 
 <div data-controller="testController">
+  <h2>If this[ <span data-bind="text:counter"></span> ] count, Two way binding is working!!</h2>
   <div>
     <div>
       <input type="text" data-bind="model:test">
     </div>
 
     <p>Result: <span data-bind="text:test"></span></p>
+  <!--  <p>Result: <span data-bind="model:test"></span></p>-->
   </div>
+
 
   <div>
     <div>
