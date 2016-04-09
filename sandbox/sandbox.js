@@ -4,7 +4,12 @@ sixth.controller('testController', function() {
   this.binder = 'test';
   this.test = 'testerel';
   this.counter = 0;
-  this.select = 'stare';
+  this.select = 'test';
+  this.onSelect = function(){
+    console.log('You just selected something', this.select);
+  }
+
+  this.showData = true;
 
   this.textarea = "textarea";
 

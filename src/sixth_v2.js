@@ -8,26 +8,28 @@
   const BIND_ATTR = 'data-bind';
   const BINDING_TYPES = {
     model: {
-      init: (element, scope, property) => {
+      init: function (element, property) {
         let setValue
           , eventsTypes
           , event;
 
         if(utils.isUndefined(element.value)) {
           return new logError(`SixthJs: Bind type model can't be applied on this element`)
-        }
+        };
 
-        setValue = function(event) {
-          this.isTouched = true;
-          scope[property] = event.target.value;
+       this.registerElement(element, property, 'model')
+
+        setValue = (event) => {
+          element.isTouched = true;
+          this.scope[property] = event.target.value;
         };
 
         eventsTypes = {
           'checkbox': () => ({
             name: 'change',
-            fn: function(event) {
-              this.isTouched = true;
-              scope[property] = event.target.checked;
+            fn: (event) => {
+              element.isTouched = true;
+              this.scope[property] = event.target.checked;
             }
           }),
           'radio': () => ({
@@ -46,7 +48,7 @@
 
         element.addEventListener(event.name, event.fn, false);
       },
-      render:(element, value) => {
+      render: function(element, value) {
         let elementsType = {
           checkbox: (element, value) => {
             element.setAttribute('checked', value);
@@ -67,28 +69,54 @@
       }
     },
     text: {
-      init: () => true,
-      render:(element, value) => {
+      init: function(element, property) {
+        this.registerElement(element, property, 'text')
+      },
+      render: function(element, value) {
         element.innerHTML = value;
       }
     },
     click: {
-      init: (element, scope, property) => {
-        if (typeof scope[property] !== 'function') {
+      init: function (element, property) {
+        if (typeof this.scope[property] !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('click', () => scope[property](), false);
+        element.addEventListener('click', () => this.scope[property](), false);
       },
       render:() => true
     },
     change: {
-      init: () => true,
+      init :function (element, property) {
+        if (typeof this.scope[property] !== 'function') {
+          return new logError(`SixthJs: ${property} is not a function.`)
+        }
 
+        element.addEventListener('change', () => this.scope[property](), false);
+      },
+      render: () => true
     },
     if: {
-      init: () => true,
-      render:() => true
+      init: function(element, property) {
+        element.initHtml = element.innerHTML;
+
+        this.registerElement(element, property, 'if')
+      },
+      render: function(element, value) {
+        console.log('render if', value)
+        if (value && !element.innerHTML) {
+          let innerElements;
+
+          element.innerHTML = element.initHtml;
+
+          innerElements = utils.getdomElemens(element);
+
+          this.bindElements(innerElements);
+        } else if (!value) {
+          element.innerHTML = '';
+        }
+
+      }
     },
     repeat: {
       init: () => true,
@@ -98,15 +126,18 @@
       init: () => true,
       render:() => true
     },
-    controller: {
-      init: () => true,
-      render:() => true
-    }
   };
+
+
 
   let utils = {
     isUndefined: (value) => typeof value === 'undefined',
-    isDefined: (value) => typeof value !== 'undefined'
+    isDefined: (value) => typeof value !== 'undefined',
+    getdomElemens:(domElement) => {
+      return domElement
+        ? domElement.querySelectorAll(`[${BIND_ATTR}]`)
+        : []
+    }
   }
 
   class logError {
@@ -116,16 +147,13 @@
   }
 
   let parseAttrData = function(attrValue) {
-    let data = attrValue.split(':');
+    try {
+      let json = attrValue.replace(/[.\w\d-]+/g, '"$&"');
 
-    let obj = {
-      type: data[0].trim(),
-      value: data[1].trim()
+      return JSON.parse(json);
+    } catch (err) {
+      new logError('Invalid syntax in binding: ' + attrValue)
     }
-
-    return BINDING_TYPES.hasOwnProperty(obj.type)
-      ? obj
-      : new logError('Invalid syntax in binding: ' + attrValue)
   };
 
   class Scope {
@@ -159,6 +187,7 @@
 
           model[property] = value;
 
+          this.render('if', property, value)
           this.render('model', property, value);
           this.render('text', property, value);
 
@@ -168,21 +197,23 @@
 
       this.callback.call(this.scope);
       this.modelView = this.scope.getModel();
+    };
+
+    registerElement(element, property, type) {
+      !element.isRegistered && this.modelView[property][type]
+        ? this.modelView[property][type].push(element)
+        : this.modelView[property][type] = [element];
     }
 
     render(type, property, value){
       if(!this.modelView || !this.modelView[property][type]) return;
 
       this.modelView[property][type].forEach((element) => {
-        BINDING_TYPES[type].render(element, value);
+        BINDING_TYPES[type].render.call(this, element, value);
       })
     };
 
-    getdomElemens() {
-      return this.ctrlElement
-        ? this.ctrlElement.querySelectorAll(`[${BIND_ATTR}]`)
-        : []
-    };
+
 
     /**
      * Sort each element with data-model attribut to it model in scope
@@ -196,16 +227,17 @@
 
         let data = parseAttrData(element.getAttribute(BIND_ATTR));
 
-        //TODO Change this to register all data-bindings from dom
-        if(!this.modelView.hasOwnProperty(data.value)) return;
+        for (let type in data) {
+          if(!this.modelView.hasOwnProperty(data[type])) return;
 
-        BINDING_TYPES[data.type].init(element, this.scope, data.value);
+          if (!BINDING_TYPES.hasOwnProperty(type)) {
+            return new logError('Invalid binding type in: ' + type)
+          }
 
-        this.modelView[data.value][data.type]
-          ? this.modelView[data.value][data.type].push(element)
-          : this.modelView[data.value][data.type] = [element];
-
-        BINDING_TYPES[data.type].render(element, this.scope[data.value]);
+          element.isRegistered = true;
+          BINDING_TYPES[type].init.call(this, element, data[type]);
+          BINDING_TYPES[type].render.call(this, element, this.scope[data[type]]);
+        }
       }
     };
   };
@@ -215,7 +247,8 @@
 
   self.controller = function(name, callback) {
     let ctrl = new Controller(name, callback);
-    let elements = ctrl.getdomElemens();
+
+    let elements = utils.getdomElemens(ctrl.ctrlElement);
 
     ctrl.bindModel();
 
