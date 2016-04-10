@@ -6,6 +6,7 @@
   const CTRL_ATTR = 'data-controller';
   const MODEL_ATTR = 'data-model';
   const BIND_ATTR = 'data-bind';
+  const RENDER_TYPES = ['model', 'text', 'if'];
   const BINDING_TYPES = {
     model: {
       init: function (element, property) {
@@ -41,7 +42,7 @@
             fn: setValue
           })
         }
-
+        console.log('parrent', element.parentElement)
         event = eventsTypes.hasOwnProperty(element.type)
           ? eventsTypes[element.type]()
           : { name: 'keyup', fn: setValue };
@@ -119,6 +120,26 @@
       }
     },
     repeat: {
+      init: function(element, property){
+        if(!Array.isArray(this.scope[property])){
+          return new logError(`SixthJs: Property [${property}] must be an Array.`)
+        }
+
+        //element.initHtml = element.innerHTML;
+
+        this.registerElement(element, property, 'repeat')
+
+
+      },
+      render: function(element, value) {
+        let parent = element.parentElement;
+
+
+
+
+      }
+    },
+    item: {
       init: () => true,
       render:() => true
     },
@@ -187,9 +208,7 @@
 
           model[property] = value;
 
-          this.render('if', property, value)
-          this.render('model', property, value);
-          this.render('text', property, value);
+          RENDER_TYPES.forEach((type) => this.render(type, property, value));
 
           return true;
         }

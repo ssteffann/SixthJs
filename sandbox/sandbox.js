@@ -17,6 +17,8 @@ sixth.controller('testController', function() {
   this.checkbox2 = 'true';
   this.radio = "Radio3";
 
+  this.collection =['test', 'test2', 'test3', 'test4'];
+
   let myVar = 'testere';
 
   this.myObj = {
