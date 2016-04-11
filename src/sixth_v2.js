@@ -6,7 +6,7 @@
   const CTRL_ATTR = 'data-controller';
   const MODEL_ATTR = 'data-model';
   const BIND_ATTR = 'data-bind';
-  const RENDER_TYPES = ['model', 'text', 'if'];
+  const RENDER_TYPES = ['model', 'text', 'if', 'repeat'];
   const BINDING_TYPES = {
     model: {
       init: function (element, property) {
@@ -42,7 +42,7 @@
             fn: setValue
           })
         }
-        console.log('parrent', element.parentElement)
+
         event = eventsTypes.hasOwnProperty(element.type)
           ? eventsTypes[element.type]()
           : { name: 'keyup', fn: setValue };
@@ -125,18 +125,43 @@
           return new logError(`SixthJs: Property [${property}] must be an Array.`)
         }
 
-        //element.initHtml = element.innerHTML;
+        if(!element.bindingTypes.alias) return;
 
-        this.registerElement(element, property, 'repeat')
+        let copy = utils.copyObj(element.bindingTypes);
 
+        delete copy.repeat;
+        delete copy.alias;
 
+        //TODO: Stringify the object
+        element.setAttribute(BIND_ATTR, copy)
+        element.initHtml = element.innerHTML;
+
+        this.registerElement(element, property, 'repeat');
       },
       render: function(element, value) {
-        let parent = element.parentElement;
+        let parent = element.parentNode
+          , newElements = document.createDocumentFragment();
+
+        let repeatEelements = utils.getdomElemens(element);
+        value.forEach((item) => {
+          let clone = element.cloneNode(true);
+
+          let children = utils.getdomElemens(clone);
+
+          for(let i in children){
+            children[i].innerHTML = item;
+          }
+
+          console.log('children', children)
+
+          newElements.appendChild(clone);
+        });
 
 
 
-
+        parent.insertBefore(newElements, element);
+        // Remove the original
+        parent.removeChild(element);
       }
     },
     item: {
@@ -158,6 +183,17 @@
       return domElement
         ? domElement.querySelectorAll(`[${BIND_ATTR}]`)
         : []
+    },
+    copyObj: (object) => {
+      return Object.keys(object).reduce((accum, key)=> {
+        if (typeof object[key] === 'object') {
+          accum[key] = this.copyObj(object[key])
+        } else {
+          accum[key] = object[key]
+        }
+
+        return accum;
+      }, {})
     }
   }
 
@@ -228,6 +264,8 @@
       if(!this.modelView || !this.modelView[property][type]) return;
 
       this.modelView[property][type].forEach((element) => {
+        if(element.isTouched) return element.isTouched = false;
+
         BINDING_TYPES[type].render.call(this, element, value);
       })
     };
@@ -253,7 +291,8 @@
             return new logError('Invalid binding type in: ' + type)
           }
 
-          element.isRegistered = true;
+          element.bindingTypes = data;
+         // element.isRegistered = true;
           BINDING_TYPES[type].init.call(this, element, data[type]);
           BINDING_TYPES[type].render.call(this, element, this.scope[data[type]]);
         }

@@ -69,6 +69,19 @@
 
   </div>
 
+  <div>
+
+    <p>Repeater:</p>
+
+    <ul>
+      <li data-bind="{ repeat:collection, alias: item}">
+        Item: <span data-bind="{text: item}"></span>
+      </li>
+    </ul>
+
+
+  </div>
+
   <div data-controller="childColtroller">
     <div>
       <div>
