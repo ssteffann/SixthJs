@@ -9,7 +9,7 @@
   const RENDER_TYPES = ['model', 'text', 'if', 'repeat'];
   const BINDING_TYPES = {
     model: {
-      init: function (element, property) {
+      init: function (element, scope, property, stopRegister) {
         let setValue
           , eventsTypes
           , event;
@@ -18,11 +18,11 @@
           return new logError(`SixthJs: Bind type model can't be applied on this element`)
         };
 
-       this.registerElement(element, property, 'model')
+        (!stopRegister) && this.registerElement(element, property, 'model')
 
         setValue = (event) => {
           element.isTouched = true;
-          this.scope[property] = event.target.value;
+          scope[property] = event.target.value;
         };
 
         eventsTypes = {
@@ -30,7 +30,7 @@
             name: 'change',
             fn: (event) => {
               element.isTouched = true;
-              this.scope[property] = event.target.checked;
+              scope[property] = event.target.checked;
             }
           }),
           'radio': () => ({
@@ -70,38 +70,40 @@
       }
     },
     text: {
-      init: function(element, property) {
-        this.registerElement(element, property, 'text')
+      init: function(element, scope, property, stopRegister) {
+        console.log('init');
+        (!stopRegister) && this.registerElement(element, property, 'text')
       },
       render: function(element, value) {
         element.innerHTML = value;
+        console.log('looop')
       }
     },
     click: {
-      init: function (element, property) {
-        if (typeof this.scope[property] !== 'function') {
+      init: function (element, scope, property) {
+        if (typeof scope[property] !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('click', () => this.scope[property](), false);
+        element.addEventListener('click', () => scope[property](), false);
       },
       render:() => true
     },
     change: {
-      init :function (element, property) {
-        if (typeof this.scope[property] !== 'function') {
+      init :function (element, scope, property) {
+        if (typeof scope[property] !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('change', () => this.scope[property](), false);
+        element.addEventListener('change', () => scope[property](), false);
       },
       render: () => true
     },
     if: {
-      init: function(element, property) {
+      init: function(element, scope, property, stopRegister) {
         element.initHtml = element.innerHTML;
 
-        this.registerElement(element, property, 'if')
+        (!stopRegister) && this.registerElement(element, property, 'if')
       },
       render: function(element, value) {
         console.log('render if', value)
@@ -120,8 +122,8 @@
       }
     },
     repeat: {
-      init: function(element, property){
-        if(!Array.isArray(this.scope[property])){
+      init: function(element, scope, property){
+        if(!Array.isArray(scope[property])){
           return new logError(`SixthJs: Property [${property}] must be an Array.`)
         }
 
@@ -130,7 +132,6 @@
         let copy = utils.copyObj(element.bindingTypes);
 
         delete copy.repeat;
-        delete copy.alias;
 
         //TODO: Stringify the object
         element.setAttribute(BIND_ATTR, copy)
@@ -143,16 +144,32 @@
           , newElements = document.createDocumentFragment();
 
         let repeatEelements = utils.getdomElemens(element);
-        value.forEach((item) => {
-          let clone = element.cloneNode(true);
-
-          let children = utils.getdomElemens(clone);
+        value.forEach((item, index) => {
+          let clone = element.cloneNode(true)
+            , children = utils.getdomElemens(clone);
 
           for(let i in children){
-            children[i].innerHTML = item;
+            let node = children[i]
+              , data;
+
+            if(!node.tagName) return;
+
+            data = parseAttrData(node.getAttribute(BIND_ATTR));
+
+            for (let type in data) {
+
+              if(data[type] === element.bindingTypes.alias)
+              {
+                console.log('----------------------------------------->')
+                BINDING_TYPES[type].init.call(this, value, index, data[type], true);
+                BINDING_TYPES[type].render.call(this, node, item);
+              }
+
+            }
+            console.log('binding',node);
           }
 
-          console.log('children', children)
+          console.log('children', clone)
 
           newElements.appendChild(clone);
         });
@@ -283,6 +300,7 @@
         if (!element.tagName) return;
 
         let data = parseAttrData(element.getAttribute(BIND_ATTR));
+        element.bindingTypes = data;
 
         for (let type in data) {
           if(!this.modelView.hasOwnProperty(data[type])) return;
@@ -291,9 +309,9 @@
             return new logError('Invalid binding type in: ' + type)
           }
 
-          element.bindingTypes = data;
+
          // element.isRegistered = true;
-          BINDING_TYPES[type].init.call(this, element, data[type]);
+          BINDING_TYPES[type].init.call(this, element, this.scope, data[type]);
           BINDING_TYPES[type].render.call(this, element, this.scope[data[type]]);
         }
       }
