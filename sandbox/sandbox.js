@@ -23,6 +23,13 @@ sixth.controller('testController', function() {
 
   this.myObj = {
     property: 'work'
+  };
+
+  this.addItem = function(){
+    let item = `New Item: ${this.counter} `;
+
+    this.collection.push(item);
+    console.log(this.collection)
   }
 
 
