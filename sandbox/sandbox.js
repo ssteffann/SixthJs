@@ -32,6 +32,10 @@ sixth.controller('testController', function() {
     console.log(this.collection)
   }
 
+  this.removeItem = function(){
+    this.collection.splice(1)
+    console.log(this.collection)
+  }
 
 
   setInterval(() =>  this.counter++, 1000);

@@ -6,6 +6,10 @@
   const CTRL_ATTR = 'data-controller';
   const MODEL_ATTR = 'data-model';
   const BIND_ATTR = 'data-bind';
+  const REPEAT ={
+    START: 'data-repeat-start',
+    STOP: 'data-repeat-stop'
+  }
   const RENDER_TYPES = ['model', 'text', 'if'];
   const BINDING_TYPES = {
     model: {
@@ -15,9 +19,9 @@
           , event;
 
         if (utils.isUndefined(element.value)) {
-          return new logError(`SixthJs: Bind type model can't be applied on this element`)
+          return new logError(`SixthJs: Bind type model can't be applied on this element`);
         }
-        ;
+
 
         (!stopRegister)&&this.registerElement(element, property, 'model')
 
@@ -136,21 +140,24 @@
         }
 
         let copy = utils.copyObj(element.bindingTypes);
+        let parent = element.parentNode;
+        let comments = {
+          start: document.createComment(REPEAT.START),
+          stop: document.createComment(REPEAT.STOP)
+        }
 
-        let comment = document.createComment('data-repeat:test');
-        let second = document.createComment('must-be after:test');
 
-        console.log('node type', comment.nodeType)
+       // this.modelView[property].comments = comments;
         console.log('COMMENT_NODE', Node.COMMENT_NODE)
 
-        element.parentNode.insertBefore(comment, element)
+        parent.helpers = comments;
+        parent.insertBefore(comments.start, element);
+        parent.insertBefore(comments.stop, element);
 
-        element.parentNode.insertBefore(second, comment)
         delete copy.repeat;
 
         //TODO: Stringify the object
-        element.setAttribute(BIND_ATTR, copy)
-        element.initHtml = element.innerHTML;
+        element.setAttribute(BIND_ATTR, copy);
 
         this.registerElement(element.cloneNode(true), property, 'repeat');
         console.log('scope[property]', scope[property] )
@@ -179,14 +186,17 @@
         });
       },
       render: function(element, value) {
-        console.log('render repeat')
-
         let parent = element.parentNode
-          , newElements = document.createDocumentFragment();
+          , newElements = document.createDocumentFragment()
+          , gItem = parent.helpers.start.nextSibling;
 
-       // parent.innerHTML = '';
+        while (gItem && (gItem.nodeValue !== REPEAT.STOP)) {
+          console.log('gItem', gItem);
 
-        let repeatEelements = utils.getdomElemens(element);
+          gItem = gItem.nextSibling
+          gItem.previousSibling.remove()
+        }
+
         value.forEach((item, index) => {
           let clone = element.cloneNode(true)
             , children = utils.getdomElemens(clone);
@@ -220,7 +230,8 @@
         });
 
         console.log('parent', parent)
-        element = parent.replaceChild(newElements, element);
+        parent.insertBefore(newElements, parent.helpers.stop);
+        //parent.removeChild(element) //You where the chosen one!!!
         // Remove the original
         //parent.removeChild(element);
       }
