@@ -1,17 +1,159 @@
 (function(window, document) {
-  let self = {};
-
-  window.sixth = self;
-
+  /**
+   * Constants
+   * @type {string}
+   */
   const CTRL_ATTR = 'data-controller';
   const MODEL_ATTR = 'data-model';
   const BIND_ATTR = 'data-bind';
-  const REPEAT ={
+  const REPEAT = {
     START: 'data-repeat-start',
     STOP: 'data-repeat-stop'
   }
   const RENDER_TYPES = ['model', 'text', 'if'];
-  const BINDING_TYPES = {
+
+  /** ***************************************************************** **/
+
+  let self = {}
+    , bindingTypes
+    , utils;
+
+  window.sixth = self;
+
+  utils = {
+    isUndefined: (value) => typeof value === 'undefined',
+    isDefined: (value) => typeof value !== 'undefined',
+    getdomElemens: (domElement) => {
+      return domElement
+        ? domElement.querySelectorAll(`[${BIND_ATTR}]`)
+        : []
+    },
+    copyObj: (object) => {
+      return Object.keys(object).reduce((accum, key)=> {
+        if (typeof object[key] === 'object') {
+          accum[key] = this.copyObj(object[key])
+        } else {
+          accum[key] = object[key]
+        }
+
+        return accum;
+      }, {})
+    },
+    parseAttrData: (attrValue) => {
+      try {
+        let json = attrValue.replace(/[.\w\d-]+/g, '"$&"');
+
+        return JSON.parse(json);
+      } catch (err) {
+        new logError('Invalid syntax in binding: ' + attrValue)
+      }
+    }
+  };
+
+  class logError {
+    constructor(message) {
+      throw new Error(message)
+    }
+  }
+
+  class Scope {
+    constructor() {}
+
+    getModel() {
+      return Object.keys(this)
+        .reduce((mappedData, key) => {
+          mappedData[key] = {};
+
+          return mappedData
+        }, {});
+    }
+  };
+
+  /**
+   * Controller class that bind model and view
+   */
+  class Controller {
+    constructor(name, callback) {
+      this.ctrlName = name;
+      this.callback = callback;
+      this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
+    }
+
+    bindModel() {
+      this.scope = new Proxy(new Scope(), {
+        set: (model, property, value) => {
+
+          let oldValue = model[property];
+          if (oldValue === value) {
+            return true;
+          }
+
+          model[property] = value;
+
+          RENDER_TYPES.forEach((type) => this.render(type, property, value));
+
+          return true;
+        }
+      });
+
+      this.callback.call(this.scope);
+      this.modelView = this.scope.getModel();
+    };
+
+    registerElement(element, property, type) {
+      !element.isRegistered&&this.modelView[property][type]
+        ? this.modelView[property][type].push(element)
+        : this.modelView[property][type] = [element];
+    };
+
+    render(type, property, value) {
+      if (!this.modelView|| !this.modelView[property][type]) {
+        return;
+      }
+
+      this.modelView[property][type].forEach((element) => {
+        if (element.isTouched) {
+          return element.isTouched = false;
+        }
+
+        bindingTypes[type].render.call(this, element, value);
+      })
+    };
+
+    /**
+     * Sort each element with data-model attribut to it model in scope
+     * @returns {*}
+     */
+    bindElements(elements) {
+      for (let i = 0, length = elements.length; i < length; i++) {
+        let element = elements[i];
+
+        if (!element.tagName) {
+          return;
+        }
+
+        let data = utils.parseAttrData(element.getAttribute(BIND_ATTR));
+        element.bindingTypes = data;
+
+        for (let type in data) {
+          if (!this.modelView.hasOwnProperty(data[type])) {
+            return;
+          }
+
+          if (!bindingTypes.hasOwnProperty(type)) {
+            return new logError('Invalid binding type in: ' + type)
+          }
+
+          // element.isRegistered = true;
+          bindingTypes[type].init.call(this, element, this.scope, data[type]);
+          bindingTypes[type].render.call(this, element, this.scope[data[type]]);
+        }
+      }
+    };
+  };
+
+
+  bindingTypes = {
     model: {
       init: function(element, scope, property, stopRegister) {
         let setValue
@@ -22,8 +164,7 @@
           return new logError(`SixthJs: Bind type model can't be applied on this element`);
         }
 
-
-        (!stopRegister)&&this.registerElement(element, property, 'model')
+        (!stopRegister) && this.registerElement(element, property, 'model')
 
         setValue = (event) => {
           element.isTouched = true;
@@ -162,7 +303,7 @@
             model[property] = value
 
             if (property === 'length') {
-              BINDING_TYPES.repeat.render.call(this, element, model);
+              bindingTypes.repeat.render.call(this, element, model);
             }
 
             return true;
@@ -190,16 +331,16 @@
               , data;
 
             if (node.tagName) {
-              data = parseAttrData(node.getAttribute(BIND_ATTR));
+              data = utils.parseAttrData(node.getAttribute(BIND_ATTR));
 
               for (let type in data) {
 
                 if (data[type] === element.bindingTypes.alias) {
-                  BINDING_TYPES[type].init.call(this, node, value, index, true);
-                  BINDING_TYPES[type].render.call(this, node, item);
+                  bindingTypes[type].init.call(this, node, value, index, true);
+                  bindingTypes[type].render.call(this, node, item);
                 } else {
-                  BINDING_TYPES[type].init.call(this, node, this.scope, data[type]);
-                  BINDING_TYPES[type].render.call(this, node, this.scope[data[type]]);
+                  bindingTypes[type].init.call(this, node, this.scope, data[type]);
+                  bindingTypes[type].render.call(this, node, this.scope[data[type]]);
                 }
               }
             }
@@ -221,153 +362,11 @@
     },
   };
 
-  let utils = {
-    isUndefined: (value) => typeof value === 'undefined',
-    isDefined: (value) => typeof value !== 'undefined',
-    getdomElemens: (domElement) => {
-      return domElement
-        ? domElement.querySelectorAll(`[${BIND_ATTR}]`)
-        : []
-    },
-    copyObj: (object) => {
-      return Object.keys(object).reduce((accum, key)=> {
-        if (typeof object[key] === 'object') {
-          accum[key] = this.copyObj(object[key])
-        } else {
-          accum[key] = object[key]
-        }
-
-        return accum;
-      }, {})
-    }
-  }
-
-  class logError {
-    constructor(message) {
-      throw new Error(message)
-    }
-  }
-
-  let parseAttrData = function(attrValue) {
-    try {
-      let json = attrValue.replace(/[.\w\d-]+/g, '"$&"');
-
-      return JSON.parse(json);
-    } catch (err) {
-      new logError('Invalid syntax in binding: ' + attrValue)
-    }
-  };
-
-  class Scope {
-    constructor() {
-    }
-
-    getModel() {
-      return Object.keys(this)
-        .reduce((mappedData, key) => {
-          mappedData[key] = {};
-
-          return mappedData
-        }, {});
-    }
-  }
-  ;
-
-  /**
-   * Controller class that bind model and view
-   */
-  class Controller {
-    constructor(name, callback) {
-      this.ctrlName = name;
-      this.callback = callback;
-      this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
-    }
-
-    bindModel() {
-      this.scope = new Proxy(new Scope(), {
-        set: (model, property, value) => {
-
-          let oldValue = model[property];
-          if (oldValue === value) {
-            return true;
-          }
-
-
-          model[property] = value;
-
-          RENDER_TYPES.forEach((type) => this.render(type, property, value));
-
-          return true;
-        }
-      });
-
-      this.callback.call(this.scope);
-      this.modelView = this.scope.getModel();
-    }
-
-  ;
-
-    registerElement(element, property, type) {
-      !element.isRegistered&&this.modelView[property][type]
-        ? this.modelView[property][type].push(element)
-        : this.modelView[property][type] = [element];
-    }
-
-    render(type, property, value) {
-      if (!this.modelView|| !this.modelView[property][type]) {
-        return;
-      }
-
-      this.modelView[property][type].forEach((element) => {
-        if (element.isTouched) {
-          return element.isTouched = false;
-        }
-
-        BINDING_TYPES[type].render.call(this, element, value);
-      })
-    }
-
-  ;
-
-    /**
-     * Sort each element with data-model attribut to it model in scope
-     * @returns {*}
-     */
-    bindElements(elements) {
-      for (let i = 0, length = elements.length; i < length; i++) {
-        let element = elements[i];
-
-        if (!element.tagName) {
-          return;
-        }
-
-        let data = parseAttrData(element.getAttribute(BIND_ATTR));
-        element.bindingTypes = data;
-
-        for (let type in data) {
-          if (!this.modelView.hasOwnProperty(data[type])) {
-            return;
-          }
-
-          if (!BINDING_TYPES.hasOwnProperty(type)) {
-            return new logError('Invalid binding type in: ' + type)
-          }
-
-          // element.isRegistered = true;
-          BINDING_TYPES[type].init.call(this, element, this.scope, data[type]);
-          BINDING_TYPES[type].render.call(this, element, this.scope[data[type]]);
-        }
-      }
-    }
-
-  ;
-  }
-  ;
+  /** ***************************************************************** **/
 
   self.controller = function(name, callback) {
-    let ctrl = new Controller(name, callback);
-
-    let elements = utils.getdomElemens(ctrl.ctrlElement);
+    let ctrl = new Controller(name, callback)
+      , elements = utils.getdomElemens(ctrl.ctrlElement);
 
     ctrl.bindModel();
 
