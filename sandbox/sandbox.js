@@ -33,7 +33,7 @@ sixth.controller('testController', function() {
   }
 
   this.removeItem = function(){
-    this.collection.splice(1)
+    this.collection.splice(-1,1)
     console.log(this.collection)
   }
 

@@ -146,55 +146,39 @@
           stop: document.createComment(REPEAT.STOP)
         }
 
-
-       // this.modelView[property].comments = comments;
-        console.log('COMMENT_NODE', Node.COMMENT_NODE)
-
-        parent.helpers = comments;
+        element.helpers = comments;
         parent.insertBefore(comments.start, element);
         parent.insertBefore(comments.stop, element);
 
         delete copy.repeat;
 
         //TODO: Stringify the object
-        element.setAttribute(BIND_ATTR, copy);
+        element.setAttribute(BIND_ATTR, JSON.stringify(copy));
 
-        this.registerElement(element.cloneNode(true), property, 'repeat');
-        console.log('scope[property]', scope[property] )
+        this.registerElement(element, property, 'repeat');
+
         scope[property] = new Proxy(scope[property], {
           set: (model, property, value) => {
-            if(property === 'length') return true;
-            console.log('model', model);
-            console.log('property',property);
-            console.log('value',value);
-            console.log('------------------------------------------>>>>>')
-
-
-            let oldValue = model[property];
-            if (oldValue === value) {
-              return true;
-            }
             model[property] = value
-           /* oldValue
-              ? model[property] = value
-              : model.push(value)*/
 
+            if (property === 'length') {
+              BINDING_TYPES.repeat.render.call(this, element, model);
+            }
 
-            BINDING_TYPES.repeat.render.call(this, element, model);
             return true;
           }
         });
+
+        parent.removeChild(element);
       },
       render: function(element, value) {
-        let parent = element.parentNode
+        let parent = element.helpers.start.parentNode
           , newElements = document.createDocumentFragment()
-          , gItem = parent.helpers.start.nextSibling;
+          , genItem = element.helpers.start.nextSibling;
 
-        while (gItem && (gItem.nodeValue !== REPEAT.STOP)) {
-          console.log('gItem', gItem);
-
-          gItem = gItem.nextSibling
-          gItem.previousSibling.remove()
+        while (genItem && (genItem.nodeValue !== REPEAT.STOP)) {
+          genItem = genItem.nextSibling
+          genItem.previousSibling.remove()
         }
 
         value.forEach((item, index) => {
@@ -211,29 +195,20 @@
               for (let type in data) {
 
                 if (data[type] === element.bindingTypes.alias) {
-                  console.log('----------------------------------------->')
                   BINDING_TYPES[type].init.call(this, node, value, index, true);
                   BINDING_TYPES[type].render.call(this, node, item);
-                }else {
+                } else {
                   BINDING_TYPES[type].init.call(this, node, this.scope, data[type]);
                   BINDING_TYPES[type].render.call(this, node, this.scope[data[type]]);
                 }
-
               }
-              console.log('binding', node);
             }
           }
-
-          console.log('children', clone)
 
           newElements.appendChild(clone);
         });
 
-        console.log('parent', parent)
-        parent.insertBefore(newElements, parent.helpers.stop);
-        //parent.removeChild(element) //You where the chosen one!!!
-        // Remove the original
-        //parent.removeChild(element);
+        parent.insertBefore(newElements, element.helpers.stop);
       }
     },
     item: {
