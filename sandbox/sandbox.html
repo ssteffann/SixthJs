@@ -1,23 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>Sanndbox for SixthJs library</title>
-  </head>
-  <body>
-    <h1>Hello World</h1>
+<head>
+  <meta charset="UTF-8">
+  <title>Sanndbox for SixthJs library</title>
+</head>
+<body>
+<h1>Hello World</h1>
 
-    <div data-controller="testController">
-      <div>
-        <input type="text" data-model="test">
-      </div>
-
-      <p>Result: <span data-model="test"></span></p>
-
+<div data-controller="testController">
+  <h2>If this[ <span data-bind="{ text:counter }"></span> ] count, Two way binding is working!!</h2>
+  <div>
+    <div>
+      <input type="text" data-bind="{ model:test }">
     </div>
 
-  <script src="../src/sixth.js"></script>
-  <script src="sandbox.js"></script>
+    <p>Result: <span data-bind="{ text:test }"></span></p>
+  <!--  <p>Result: <span data-bind="model:test"></span></p>-->
+  </div>
 
-  </body>
+
+  <div>
+   <p> <input type="checkbox" data-bind="{model: showData}"> Show Select
+   </p>
+  </div>
+
+  <div data-bind="{ if: showData}">
+      <select data-bind="{ model:select,
+                           change: onSelect} ">
+        <option></option>
+        <option value="test">Test</option>
+        <option value="testare">Testare</option>
+        <option value="someText">Some text</option>
+      </select>
+
+    <p>Result: <span data-bind="{ text:select }"></span></p>
+  </div>
+
+  <div>
+    <textarea data-bind="{model:textarea}"></textarea>
+
+    <p>Result: <span data-bind="{text:textarea}"></span></p>
+  </div>
+
+  <div>
+
+    <ul ></ul>
+  </div>
+
+  <div>
+    <div>
+      <input type="checkbox" data-bind="{model:checkbox}"> Checbox
+      <input type="checkbox" data-bind="{model:checkbox2}"> Checkbox2
+    </div>
+
+    <p>Result Checbox: <span data-bind="{text:checkbox}"></span></p>
+    <p>Result Checkbox2: <span data-bind="{text:checkbox2}"></span></p>
+
+  </div>
+
+  <div>
+    <div>
+      <input type="radio" name="radio" data-bind="{model:radio}" value="Radio"> Radio
+      <input type="radio" name="radio" data-bind="{model:radio}" value="Radio3"> Radio3
+    </div>
+
+    <p>Result: <span data-bind="{text:radio}"></span></p>
+
+
+  </div>
+
+  <div>
+
+    <p>Repeater: <button data-bind="{click: addItem}">Add item</button></p>
+    <p>Repeater: <button data-bind="{click: removeItem}">Remove item</button></p>
+
+    <ul>
+      <li data-bind="{ repeat:collection, alias: item}">
+        Item: <span data-bind="{text: item}"></span>
+      </li>
+    </ul>
+
+
+  </div>
+
+  <div data-controller="childColtroller">
+    <div>
+      <div>
+        <input type="text" data-bind="{model:child}">
+      </div>
+
+      <p>Result: <span data-bind="{text:child}"></span></p>
+    </div>
+
+    <div>
+      <div>
+        <button type="button" data-bind="{click:clickButton}">I'm a button click me</button>
+        <a href="#" data-bind="{click:clickLink}">I'm a link click me</a>
+      </div>
+
+      <p>Result from click: <span data-bind="{text:function}"></span></p>
+    </div>
+
+  </div>
+</div>
+
+
+<script src="../src/sixth_v2.js"></script>
+<script src="sandbox.js"></script>
+
+</body>
 </html>
