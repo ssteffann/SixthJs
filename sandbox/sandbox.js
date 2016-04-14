@@ -35,7 +35,11 @@ sixth.controller('testController', function() {
   this.removeItem = function(){
     this.collection.splice(-1,1)
     console.log(this.collection)
-  }
+  };
+
+  sixth.$http.get('test.html').then((response)=> {
+    console.log('response from server', response)
+  })
 
 
   setInterval(() =>  this.counter++, 1000);

@@ -56,6 +56,55 @@
     }
   }
 
+  function Http(options) {
+    return new Promise((resolve, reject) => {
+      let request = new XMLHttpRequest()
+        , { method, url, params, headers} = options;
+
+      request.open(method, url);
+
+      request.onload = function() {
+        if (this.status >= 200 && this.status < 300) {
+          return resolve(request.response);
+        }
+
+        return reject({
+          status: this.status,
+          data: request.statusText
+        });
+      };
+
+      request.onerror = function() {
+        return reject({
+          status: this.status,
+          data: request.statusText
+        });
+      };
+
+      if (headers && typeof headers === 'object') {
+        Object.keys(headers)
+          .forEach((key) => request.setRequestHeader(key, headers[key]));
+      }
+
+      if (params && typeof headers === 'object') {
+        params = Object.keys(params)
+          .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
+          .join('&');
+      }
+
+      request.send(params);
+    });
+  };
+
+  self.$http = {
+    'get': (url, params, headers) => Http({ method: 'GET', url: url, params: params, headers: headers }),
+    'post': (url, params, headers) => Http({ method: 'POST', url: url, params: params, headers: headers }),
+    'put': (url, params, headers) => Http({ method: 'PUT', url: url, params: params, headers: headers }),
+    'delete': (url, params, headers) => Http({ method: 'DELETE', url: url, params: params, headers: headers }),
+    'options': (url, params, headers) => Http({ method: 'OPTIONS', url: url, params: params, headers: headers }),
+    'head': (url, params, headers) => Http({ method: 'HEAD', url: url, params: params, headers: headers }),
+  };
+
   class Scope {
     constructor() {}
 
