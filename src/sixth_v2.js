@@ -156,7 +156,7 @@
     };
 
     render(type, property, value) {
-      if (!this.modelView|| !this.modelView[property][type]) {
+      if (!this.modelView || !this.modelView[property][type]) {
         return;
       }
 
@@ -185,7 +185,7 @@
         element.bindingTypes = data;
 
         for (let type in data) {
-          if (!this.modelView.hasOwnProperty(data[type])) {
+          if (type!='include' && !this.modelView.hasOwnProperty(data[type])) {
             return;
           }
 
@@ -301,7 +301,7 @@
       init: function(element, scope, property, stopRegister) {
         element.initHtml = element.innerHTML;
 
-        (!stopRegister)&&this.registerElement(element, property, 'if')
+        (!stopRegister) && this.registerElement(element, property, 'if')
       },
       render: function(element, value) {
         //console.log('render if', value)
@@ -405,10 +405,35 @@
       init: () => true,
       render: () => true
     },
+    include: {
+      init: function(element, scope, url) {
+        this.templates = {
+          url: url
+        }
+
+        self.$http.get(url)
+          .then((html)=> {
+            let div = document.createElement('div')
+              , fragment = document.createDocumentFragment()
+              , elements;
+
+            div.innerHTML = html;
+
+            fragment.appendChild(div);
+
+            elements = utils.getdomElemens(fragment);
+            this.bindElements(elements);
+
+            element.appendChild(fragment);
+          })
+
+      },
+      render: () => true
+    },
     view: {
       init: () => true,
       render: () => true
-    },
+    }
   };
 
   /** ***************************************************************** **/

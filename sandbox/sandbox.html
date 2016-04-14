@@ -24,17 +24,6 @@
    </p>
   </div>
 
-  <div data-bind="{ if: showData}">
-      <select data-bind="{ model:select,
-                           change: onSelect} ">
-        <option></option>
-        <option value="test">Test</option>
-        <option value="testare">Testare</option>
-        <option value="someText">Some text</option>
-      </select>
-
-    <p>Result: <span data-bind="{ text:select }"></span></p>
-  </div>
 
   <div>
     <textarea data-bind="{model:textarea}"></textarea>
@@ -43,8 +32,9 @@
   </div>
 
   <div>
+    Include some template:
 
-    <ul ></ul>
+    <div data-bind="{include: test.html}"></div>
   </div>
 
   <div>
