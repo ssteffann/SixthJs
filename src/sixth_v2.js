@@ -21,6 +21,13 @@
   window.sixth = self;
 
   utils = {
+    forEachNode: (elem, fn) => {
+      if(!elem) return;
+
+      for (let i=0, lgth = elem.length; i < lgth; i++) {
+        fn(elem[i], i);
+      }
+    },
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined',
     getdomElemens: (domElement) => {
@@ -54,60 +61,54 @@
     constructor(message) {
       throw new Error(message)
     }
+  };
+
+  class Bootsrapper {
+    constructor() {
+      this.ctrlMap = new Map();
+      this.ctrlElemMap = new Map();
+
+      this.registerCtrlElements();
+    }
+
+    registerCtrlElements(doc) {
+      let ctrl = (doc || document).querySelectorAll(`[${CTRL_ATTR}]`);
+
+      utils.forEachNode(ctrl, (elem) => {
+        let name = elem.getAttribute(CTRL_ATTR);
+
+        this.ctrlElemMap.set(name, elem);
+
+        this.build(name);
+      });
+    };
+
+    registerCtrl(name, ctrl) {
+      this.ctrlMap.set(name, ctrl);
+
+      this.build(name);
+    };
+
+    build(ctrlName) {
+      let ctrl = this.ctrlMap.get(ctrlName)
+        , ctrlEelem = this.ctrlElemMap.get(ctrlName)
+        , elements;
+
+      if(!ctrl || !ctrlEelem) return;
+
+      elements = utils.getdomElemens(ctrlEelem)
+      ctrl.bindModel();
+
+      ctrl.bindElements(elements);
+      console.log('Binded ctrl:', ctrl)
+    };
+
+    clearElements() {
+      this.ctrlElemMap.clear();
+    }
   }
 
-  function Http(options) {
-    return new Promise((resolve, reject) => {
-      let request = new XMLHttpRequest()
-        , { method, url, params, headers} = options;
-
-      request.open(method, url);
-
-      request.onload = function() {
-        if (this.status >= 200 && this.status < 300) {
-          return resolve(request.response);
-        }
-
-        return reject({
-          status: this.status,
-          data: request.statusText
-        });
-      };
-
-      request.onerror = function() {
-        return reject({
-          status: this.status,
-          data: request.statusText
-        });
-      };
-
-      if (headers && typeof headers === 'object') {
-        Object.keys(headers)
-          .forEach((key) => request.setRequestHeader(key, headers[key]));
-      }
-
-      if (params && typeof headers === 'object') {
-        params = Object.keys(params)
-          .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
-          .join('&');
-      }
-
-      request.send(params);
-    });
-  };
-
-  self.$http = {
-    'get': (url, params, headers) => Http({ method: 'GET', url: url, params: params, headers: headers }),
-    'post': (url, params, headers) => Http({ method: 'POST', url: url, params: params, headers: headers }),
-    'put': (url, params, headers) => Http({ method: 'PUT', url: url, params: params, headers: headers }),
-    'delete': (url, params, headers) => Http({ method: 'DELETE', url: url, params: params, headers: headers }),
-    'options': (url, params, headers) => Http({ method: 'OPTIONS', url: url, params: params, headers: headers }),
-    'head': (url, params, headers) => Http({ method: 'HEAD', url: url, params: params, headers: headers }),
-  };
-
   class Scope {
-    constructor() {}
-
     getModel() {
       return Object.keys(this)
         .reduce((mappedData, key) => {
@@ -116,7 +117,7 @@
           return mappedData
         }, {});
     }
-  };
+  }
 
   /**
    * Controller class that bind model and view
@@ -125,7 +126,6 @@
     constructor(name, callback) {
       this.ctrlName = name;
       this.callback = callback;
-      this.ctrlElement = document.querySelector(`[${CTRL_ATTR}=${name}]`);
     }
 
     bindModel() {
@@ -193,7 +193,6 @@
             return new logError('Invalid binding type in: ' + type)
           }
 
-          // element.isRegistered = true;
           bindingTypes[type].init.call(this, element, this.scope, data[type]);
           bindingTypes[type].render.call(this, element, this.scope[data[type]]);
         }
@@ -201,6 +200,55 @@
     };
   };
 
+
+  function Http(options) {
+    return new Promise((resolve, reject) => {
+      let request = new XMLHttpRequest()
+        , { method, url, params, headers} = options;
+
+      request.open(method, url);
+
+      request.onload = function() {
+        if (this.status >= 200 && this.status < 300) {
+          return resolve(request.response);
+        }
+
+        return reject({
+          status: this.status,
+          data: request.statusText
+        });
+      };
+
+      request.onerror = function() {
+        return reject({
+          status: this.status,
+          data: request.statusText
+        });
+      };
+
+      if (headers && typeof headers === 'object') {
+        Object.keys(headers)
+          .forEach((key) => request.setRequestHeader(key, headers[key]));
+      }
+
+      if (params && typeof headers === 'object') {
+        params = Object.keys(params)
+          .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
+          .join('&');
+      }
+
+      request.send(params);
+    });
+  };
+
+  self.$http = {
+    'get': (url, params, headers) => Http({ method: 'GET', url: url, params: params, headers: headers }),
+    'post': (url, params, headers) => Http({ method: 'POST', url: url, params: params, headers: headers }),
+    'put': (url, params, headers) => Http({ method: 'PUT', url: url, params: params, headers: headers }),
+    'delete': (url, params, headers) => Http({ method: 'DELETE', url: url, params: params, headers: headers }),
+    'options': (url, params, headers) => Http({ method: 'OPTIONS', url: url, params: params, headers: headers }),
+    'head': (url, params, headers) => Http({ method: 'HEAD', url: url, params: params, headers: headers }),
+  };
 
   bindingTypes = {
     model: {
@@ -436,17 +484,12 @@
     }
   };
 
+  let bootsrapper = new Bootsrapper();
+
   /** ***************************************************************** **/
 
   self.controller = function(name, callback) {
-    let ctrl = new Controller(name, callback)
-      , elements = utils.getdomElemens(ctrl.ctrlElement);
-
-    ctrl.bindModel();
-
-    ctrl.bindElements(elements);
-
-    console.log('ctrl', ctrl)
+    bootsrapper.registerCtrl(name, new Controller(name, callback));
   }
 
 })(window, document)
