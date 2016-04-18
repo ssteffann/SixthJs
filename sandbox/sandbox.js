@@ -37,6 +37,12 @@ sixth.controller('testController', function() {
     console.log(this.collection)
   };
 
+  window.onpopstate = function(event){
+    console.log('new location: ' + window.location);
+
+    event.preventDefault();
+  }
+
 
   setInterval(() =>  this.counter++, 1000);
 });
