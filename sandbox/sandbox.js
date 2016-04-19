@@ -1,5 +1,12 @@
 console.log('sixth', sixth);
 
+sixth.route.config({html5Mode: false});
+
+sixth.route
+  .register({url: '/test'})
+  .register({url: '/about/foo'})
+  .register({url: '/foo/:id'})
+
 sixth.controller('testController', function() {
   this.binder = 'test';
   this.test = 'testerel';
@@ -36,13 +43,6 @@ sixth.controller('testController', function() {
     this.collection.splice(-1,1)
     console.log(this.collection)
   };
-
-  window.onpopstate = function(event){
-    console.log('new location: ' + window.location);
-
-    event.preventDefault();
-  }
-
 
   setInterval(() =>  this.counter++, 1000);
 });
