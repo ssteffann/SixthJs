@@ -373,6 +373,8 @@
     ctrl.bindElements(elements);
 
     console.log('ctrl', ctrl)
+
+    return this;
   }
 
 })(window, document)

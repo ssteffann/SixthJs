@@ -6,6 +6,7 @@
   const CTRL_ATTR = 'data-controller';
   const MODEL_ATTR = 'data-model';
   const BIND_ATTR = 'data-bind';
+  const DATA_VIEW = 'data-view';
   const REPEAT = {
     START: 'data-repeat-start',
     STOP: 'data-repeat-stop'
@@ -163,7 +164,7 @@
     };
 
     registerElement(element, property, type) {
-      !element.isRegistered&&this.modelView[property][type]
+      !element.isRegistered && this.modelView[property][type]
         ? this.modelView[property][type].push(element)
         : this.modelView[property][type] = [element];
     };
@@ -224,7 +225,7 @@
         if (this.status >= 200 && this.status < 300) {
           return resolve(request.response);
         }
-
+        console.log('onload', this.status)
         return reject({
           status: this.status,
           data: request.statusText
@@ -232,6 +233,7 @@
       };
 
       request.onerror = function() {
+        console.log('error')
         return reject({
           status: this.status,
           data: request.statusText
@@ -374,9 +376,27 @@
   let bootsrapper = new Bootsrapper();
 
   self.route = new Router((state, params) => {
-    registerElement
-    console.log('state', state);
-    console.log('params', params);
+    let element = document.querySelector(`[${DATA_VIEW}]`)
+
+    self.$http.get(state.templateUrl)
+      .then((html)=> {
+  /*      let div = document.createElement('div')
+          , fragment = document.createDocumentFragment()
+          , elements;
+
+        div.innerHTML = html;
+
+        fragment.appendChild(div);
+
+        elements = utils.getdomElemens(fragment);*/
+
+        element.innerHTML = html;
+
+        bootsrapper.registerElement(state.controller, element);
+      })
+      .catch((error) => {
+        console.log('error', error)
+      });
   });
   self.$http = {
     'get': (url, params, headers) => Http({ method: 'GET', url: url, params: params, headers: headers }),
@@ -627,6 +647,8 @@
 
   self.controller = function(name, callback) {
     bootsrapper.registerCtrl(name, new Controller(name, callback));
+
+    return this;
   }
 
 })(window, document)

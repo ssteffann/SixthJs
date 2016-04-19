@@ -1,0 +1,16 @@
+<h1>Hello!! I'm a partial child template!!</h1>
+<h2>And i have a repeater:</h2>
+
+<div>
+
+  <p>Repeater: <button data-bind="{click: addItem}">Add item</button></p>
+  <p>Repeater: <button data-bind="{click: removeItem}">Remove item</button></p>
+
+  <ul>
+    <li data-bind="{ repeat:collection, alias: item}">
+      Item: <span data-bind="{text: item}"></span>
+    </li>
+  </ul>
+
+
+</div>
