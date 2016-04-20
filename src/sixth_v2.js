@@ -21,7 +21,7 @@
   /** ***************************************************************** **/
 
   let self = {}
-    , bindingTypes
+    , Binding_Types
     , utils;
 
   window.sixth = self;
@@ -31,7 +31,9 @@
       if(!elem) return;
 
       for (let i=0, lgth = elem.length; i < lgth; i++) {
-        fn(elem[i], i);
+        if (elem[i].tagName) {
+          fn(elem[i], i);
+        }
       }
     },
     isUndefined: (value) => typeof value === 'undefined',
@@ -54,7 +56,7 @@
     },
     parseAttrData: (attrValue) => {
       try {
-        let json = attrValue.replace(/[.\w\d-]+/g, '"$&"');
+        let json = attrValue.replace(/[.\w\d\/-]+/g, '"$&"');
 
         return JSON.parse(json);
       } catch (err) {
@@ -110,7 +112,8 @@
 
       if(!ctrl || !ctrlEelem) return;
 
-      elements = utils.getdomElemens(ctrlEelem)
+      elements = utils.getdomElemens(ctrlEelem);
+
       ctrl.bindModel();
 
       ctrl.bindElements(elements);
@@ -164,7 +167,7 @@
     };
 
     registerElement(element, property, type) {
-      !element.isRegistered && this.modelView[property][type]
+      this.modelView[property][type]
         ? this.modelView[property][type].push(element)
         : this.modelView[property][type] = [element];
     };
@@ -179,7 +182,7 @@
           return element.isTouched = false;
         }
 
-        bindingTypes[type].render.call(this, element, value);
+        Binding_Types[type].render.call(this, element, value);
       })
     };
 
@@ -188,29 +191,25 @@
      * @returns {*}
      */
     bindElements(elements) {
-      for (let i = 0, length = elements.length; i < length; i++) {
-        let element = elements[i];
-
-        if (!element.tagName) {
-          return;
-        }
+      utils.forEachNode(elements, (element) => {
 
         let data = utils.parseAttrData(element.getAttribute(BIND_ATTR));
         element.bindingTypes = data;
 
-        for (let type in data) {
-          if (type!='include' && !this.modelView.hasOwnProperty(data[type])) {
+        Object.keys(data).forEach((type) => {
+
+          if (type !== 'include' && !this.modelView.hasOwnProperty(data[type])) {
             return;
           }
 
-          if (!bindingTypes.hasOwnProperty(type)) {
+          if (!Binding_Types.hasOwnProperty(type)) {
             return new logError('Invalid binding type in: ' + type)
           }
 
-          bindingTypes[type].init.call(this, element, this.scope, data[type]);
-          bindingTypes[type].render.call(this, element, this.scope[data[type]]);
-        }
-      }
+          Binding_Types[type].init.call(this, element, this.scope, data[type]);
+          Binding_Types[type].render.call(this, element, this.scope[data[type]]);
+        });
+      });
     };
   };
 
@@ -225,7 +224,6 @@
         if (this.status >= 200 && this.status < 300) {
           return resolve(request.response);
         }
-        console.log('onload', this.status)
         return reject({
           status: this.status,
           data: request.statusText
@@ -233,7 +231,6 @@
       };
 
       request.onerror = function() {
-        console.log('error')
         return reject({
           status: this.status,
           data: request.statusText
@@ -340,7 +337,6 @@
     }
 
     register(state = {}) {
-      console.log('this.routes', this.routes)
       this.routes.push(state);
 
       return this;
@@ -380,24 +376,24 @@
 
     self.$http.get(state.templateUrl)
       .then((html)=> {
-  /*      let div = document.createElement('div')
-          , fragment = document.createDocumentFragment()
-          , elements;
+        let div = document.createElement('div')
+          , fragment = document.createDocumentFragment();
 
         div.innerHTML = html;
+        element.innerHTML = '';
 
         fragment.appendChild(div);
 
-        elements = utils.getdomElemens(fragment);*/
+        bootsrapper.registerElement(state.controller, fragment);
 
-        element.innerHTML = html;
 
-        bootsrapper.registerElement(state.controller, element);
+        element.appendChild(fragment);
       })
       .catch((error) => {
-        console.log('error', error)
+        throw new Error(error);
       });
   });
+
   self.$http = {
     'get': (url, params, headers) => Http({ method: 'GET', url: url, params: params, headers: headers }),
     'post': (url, params, headers) => Http({ method: 'POST', url: url, params: params, headers: headers }),
@@ -407,7 +403,7 @@
     'head': (url, params, headers) => Http({ method: 'HEAD', url: url, params: params, headers: headers }),
   };
 
-  bindingTypes = {
+  Binding_Types = {
     model: {
       init: function(element, scope, property, stopRegister) {
         let setValue
@@ -450,8 +446,6 @@
         element.addEventListener(event.name, event.fn, false);
       },
       render: function(element, value) {
-        //console.log('render model')
-
         let elementsType = {
           checkbox: (element, value) => {
             element.setAttribute('checked', value);
@@ -509,7 +503,6 @@
         (!stopRegister) && this.registerElement(element, property, 'if')
       },
       render: function(element, value) {
-        //console.log('render if', value)
         if (value&& !element.innerHTML) {
           let innerElements;
 
@@ -557,7 +550,7 @@
             model[property] = value
 
             if (property === 'length') {
-              bindingTypes.repeat.render.call(this, element, model);
+              Binding_Types.repeat.render.call(this, element, model);
             }
 
             return true;
@@ -590,11 +583,11 @@
               for (let type in data) {
 
                 if (data[type] === element.bindingTypes.alias) {
-                  bindingTypes[type].init.call(this, node, value, index, true);
-                  bindingTypes[type].render.call(this, node, item);
+                  Binding_Types[type].init.call(this, node, value, index, true);
+                  Binding_Types[type].render.call(this, node, item);
                 } else {
-                  bindingTypes[type].init.call(this, node, this.scope, data[type]);
-                  bindingTypes[type].render.call(this, node, this.scope[data[type]]);
+                  Binding_Types[type].init.call(this, node, this.scope, data[type]);
+                  Binding_Types[type].render.call(this, node, this.scope[data[type]]);
                 }
               }
             }

@@ -3,23 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <title>Sanndbox for SixthJs library</title>
+
+  <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+        integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+        crossorigin="anonymous">
 </head>
 <body>
-<h1>Hello World</h1>
 
-<div data-controller="testController">
-  <h2>If this[ <span data-bind="{ text:counter }"></span> ] count, Two way
-    binding is working!!</h2>
+<header data-controller="testController">
+  <div data-bind="{ include: partials/header.html }"></div>
+</header>
 
-  <ul>
-    <li><a href="#/checkbox">Checkboxes and Radio</a></li>
-    <li><a href="#/inputs">Inputs</a></li>
-    <li><a href="#/parrent">Parrent with childs</a></li>
-  </ul>
 
-</div>
-
-<div data-view></div>
+<div class="container" data-view></div>
 
 
 <script src="../src/sixth_v2.js"></script>
