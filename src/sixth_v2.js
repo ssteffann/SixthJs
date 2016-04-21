@@ -22,6 +22,7 @@
 
   let self = {}
     , Binding_Types
+    , http
     , utils;
 
   window.sixth = self;
@@ -63,6 +64,45 @@
         new logError('Invalid syntax in binding: ' + attrValue)
       }
     }
+  };
+
+  http = function(options) {
+    return new Promise((resolve, reject) => {
+      let request = new XMLHttpRequest()
+        , { method, url, params, headers} = options;
+
+      request.open(method, url);
+
+      request.onload = function() {
+        if (this.status >= 200&&this.status < 300) {
+          return resolve(request.response);
+        }
+        return reject({
+          status: this.status,
+          data: request.statusText
+        });
+      };
+
+      request.onerror = function() {
+        return reject({
+          status: this.status,
+          data: request.statusText
+        });
+      };
+
+      if (headers&&typeof headers === 'object') {
+        Object.keys(headers)
+          .forEach((key) => request.setRequestHeader(key, headers[key]));
+      }
+
+      if (params&&typeof headers === 'object') {
+        params = Object.keys(params)
+          .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
+          .join('&');
+      }
+
+      request.send(params);
+    });
   };
 
   class logError {
@@ -213,45 +253,6 @@
     };
   };
 
-  function Http(options) {
-    return new Promise((resolve, reject) => {
-      let request = new XMLHttpRequest()
-        , { method, url, params, headers} = options;
-
-      request.open(method, url);
-
-      request.onload = function() {
-        if (this.status >= 200 && this.status < 300) {
-          return resolve(request.response);
-        }
-        return reject({
-          status: this.status,
-          data: request.statusText
-        });
-      };
-
-      request.onerror = function() {
-        return reject({
-          status: this.status,
-          data: request.statusText
-        });
-      };
-
-      if (headers && typeof headers === 'object') {
-        Object.keys(headers)
-          .forEach((key) => request.setRequestHeader(key, headers[key]));
-      }
-
-      if (params && typeof headers === 'object') {
-        params = Object.keys(params)
-          .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
-          .join('&');
-      }
-
-      request.send(params);
-    });
-  };
-
   class Router {
     constructor(fn) {
       this.handler = fn;
@@ -367,8 +368,6 @@
     }
   }
 
-  //TODO Look on this address
-  // http://krasimirtsonev.com/blog/article/A-modern-JavaScript-router-in-100-lines-history-api-pushState-hash-url
   let bootsrapper = new Bootsrapper();
 
   self.route = new Router((state, params) => {
@@ -386,7 +385,6 @@
 
         bootsrapper.registerElement(state.controller, fragment);
 
-
         element.appendChild(fragment);
       })
       .catch((error) => {
@@ -395,12 +393,12 @@
   });
 
   self.$http = {
-    'get': (url, params, headers) => Http({ method: 'GET', url: url, params: params, headers: headers }),
-    'post': (url, params, headers) => Http({ method: 'POST', url: url, params: params, headers: headers }),
-    'put': (url, params, headers) => Http({ method: 'PUT', url: url, params: params, headers: headers }),
-    'delete': (url, params, headers) => Http({ method: 'DELETE', url: url, params: params, headers: headers }),
-    'options': (url, params, headers) => Http({ method: 'OPTIONS', url: url, params: params, headers: headers }),
-    'head': (url, params, headers) => Http({ method: 'HEAD', url: url, params: params, headers: headers }),
+    'get': (url, params, headers) => http({ method: 'GET', url: url, params: params, headers: headers }),
+    'post': (url, params, headers) => http({ method: 'POST', url: url, params: params, headers: headers }),
+    'put': (url, params, headers) => http({ method: 'PUT', url: url, params: params, headers: headers }),
+    'delete': (url, params, headers) => http({ method: 'DELETE', url: url, params: params, headers: headers }),
+    'options': (url, params, headers) => http({ method: 'OPTIONS', url: url, params: params, headers: headers }),
+    'head': (url, params, headers) => http({ method: 'HEAD', url: url, params: params, headers: headers }),
   };
 
   Binding_Types = {
@@ -447,17 +445,13 @@
       },
       render: function(element, value) {
         let elementsType = {
-          checkbox: (element, value) => {
-            element.setAttribute('checked', value);
-          },
+          checkbox: (element, value) => element.checked = !!value,
           radio: (element, value) => {
-            if (element.value === value&& !element.checked) {
-              element.setAttribute('checked', true);
+            if (element.value === value && !element.checked) {
+              element.checked = true;
             }
           },
-          default: (element, value) => {
-            element.value = value;
-          }
+          default: (element, value) => element.value = value
         };
 
         elementsType.hasOwnProperty(element.type)
@@ -468,7 +462,7 @@
     text: {
       init: function(element, scope, property, stopRegister) {
         //console.log('init');
-        (!stopRegister)&&this.registerElement(element, property, 'text')
+        (!stopRegister) && this.registerElement(element, property, 'text')
       },
       render: function(element, value) {
         //console.log('render text')
@@ -605,10 +599,6 @@
     },
     include: {
       init: function(element, scope, url) {
-        this.templates = {
-          url: url
-        }
-
         self.$http.get(url)
           .then((html)=> {
             let div = document.createElement('div')
@@ -633,8 +623,6 @@
       render: () => true
     }
   };
-
-
 
   /** ***************************************************************** **/
 

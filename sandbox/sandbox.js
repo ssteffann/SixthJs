@@ -39,8 +39,10 @@ sixth.controller('testController', function() {
 
   .controller('CheckboxCtrl', function() {
 
-    this.checkbox = 'false';
-    this.checkbox2 = 'true';
+    this.checkbox = false;
+    this.checkbox2 = true;
+
+
     this.radio = "Radio3";
   })
 
