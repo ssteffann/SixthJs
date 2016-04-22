@@ -18,12 +18,20 @@ sixth.route
     templateUrl: 'partials/parent-tpl.html',
     controller: 'RepeaterCtrl'
   })
+  .register({
+    url: '/dot',
+    templateUrl: 'partials/dot-notation.html',
+    controller: 'DotNotationCtrl'
+  })
   .check();
 
 sixth.controller('testController', function() {
   this.binder = 'test';
 
   this.myObj = {
+    otherOne: {
+      test: 0
+    },
     property: 'work'
   };
   let getTime = () => {
@@ -34,6 +42,7 @@ sixth.controller('testController', function() {
 
 
   this.time = getTime();
+ // setInterval(() => this.myObj.otherOne.test +=1, 1000)
   setInterval(() => this.time = getTime(), 1000);
 })
 
@@ -53,8 +62,9 @@ sixth.controller('testController', function() {
     this.select = 'test';
     this.showData = true;
 
-    this.onSelect = function() {
+    this.onSelect = function(event) {
       console.log('You just selected something', this.select);
+      console.log('event', event);
     }
   })
 
@@ -71,6 +81,15 @@ sixth.controller('testController', function() {
     this.removeItem = function() {
       this.collection.splice(-1, 1)
       console.log(this.collection)
+    };
+  })
+
+  .controller('DotNotationCtrl', function(){
+    this.myObj = {
+      label: {
+        test: 'Work in progress'
+      },
+      property: 'work'
     };
   })
 

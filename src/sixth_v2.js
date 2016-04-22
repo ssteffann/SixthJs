@@ -28,6 +28,21 @@
   window.sixth = self;
 
   utils = {
+    getProperties(string = '', scope = {}){
+      let keys = string.split('.');
+
+      if(!scope.hasOwnProperty(keys[0])) return;
+
+      let finalValue = scope;
+
+      keys.forEach((key) => {
+        finalValue = finalValue[key];
+      });
+
+      console.log('final Value', finalValue);
+
+      return finalValue;
+    },
     forEachNode: (elem, fn) => {
       if(!elem) return;
 
@@ -167,12 +182,21 @@
 
   class Scope {
     getModel() {
-      return Object.keys(this)
-        .reduce((mappedData, key) => {
-          mappedData[key] = {};
+      let mapModel = function(obj) {
+        let result = {}
+        if (typeof obj === 'object' && !Array.isArray(obj)) {
+          result = Object.keys(obj).reduce((mappedData, key) => {
 
-          return mappedData
-        }, {});
+            mappedData[key] = mapModel(obj[key])
+
+            return mappedData;
+          }, {});
+        }
+
+        return result;
+      }
+
+      return mapModel(this);
     }
   }
 
@@ -188,6 +212,9 @@
     bindModel() {
       this.scope = new Proxy(new Scope(), {
         set: (model, property, value) => {
+/*          console.log('model', model)
+          console.log('property', property)
+          console.log('value', value)*/
 
           let oldValue = model[property];
           if (oldValue === value) {
@@ -234,20 +261,21 @@
       utils.forEachNode(elements, (element) => {
 
         let data = utils.parseAttrData(element.getAttribute(BIND_ATTR));
+
         element.bindingTypes = data;
 
         Object.keys(data).forEach((type) => {
-
           if (type !== 'include' && !this.modelView.hasOwnProperty(data[type])) {
             return;
           }
+
 
           if (!Binding_Types.hasOwnProperty(type)) {
             return new logError('Invalid binding type in: ' + type)
           }
 
           Binding_Types[type].init.call(this, element, this.scope, data[type]);
-          Binding_Types[type].render.call(this, element, this.scope[data[type]]);
+          Binding_Types[type].render.call(this, element,  utils.getProperties(data[type], this.scope));
         });
       });
     };
@@ -430,16 +458,12 @@
           'radio': () => ({
             name: 'change',
             fn: setValue
-          }),
-          'select-one': () => ({
-            name: 'change',
-            fn: setValue
           })
         }
 
         event = eventsTypes.hasOwnProperty(element.type)
           ? eventsTypes[element.type]()
-          : { name: 'keyup', fn: setValue };
+          : { name: 'input', fn: setValue };
 
         element.addEventListener(event.name, event.fn, false);
       },
@@ -450,13 +474,12 @@
             if (element.value === value && !element.checked) {
               element.checked = true;
             }
-          },
-          default: (element, value) => element.value = value
+          }
         };
 
         elementsType.hasOwnProperty(element.type)
           ? elementsType[element.type](element, value)
-          : elementsType.default(element, value);
+          : element.value = value;
       }
     },
     text: {
@@ -476,7 +499,17 @@
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('click', () => scope[property](), false);
+        element.addEventListener('click',() => scope[property](), false);
+      },
+      render: () => true
+    },
+    dblclick: {
+      init: function(element, scope, property) {
+        if (typeof scope[property] !== 'function') {
+          return new logError(`SixthJs: ${property} is not a function.`)
+        }
+
+        element.addEventListener('dblclick',() => scope[property](), false);
       },
       render: () => true
     },
