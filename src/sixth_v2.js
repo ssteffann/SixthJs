@@ -28,20 +28,16 @@
   window.sixth = self;
 
   utils = {
-    getProperties(string = '', scope = {}){
-      let keys = string.split('.');
+    objectPath: function (obj, path, value) {
+      if (typeof path == 'string') return this.objectPath(obj, path.split('.'), value);
 
-      if(!scope.hasOwnProperty(keys[0])) return;
+      if (!obj || !obj.hasOwnProperty(path[0])) return;
 
-      let finalValue = scope;
+      if (path.length == 1 && this.isDefined(value)) return obj[path[0]] = value;
 
-      keys.forEach((key) => {
-        finalValue = finalValue[key];
-      });
+      if (path.length == 1) return obj[path[0]];
 
-      console.log('final Value', finalValue);
-
-      return finalValue;
+      return this.objectPath(obj[path[0]], path.slice(1), value);
     },
     forEachNode: (elem, fn) => {
       if(!elem) return;
@@ -105,12 +101,12 @@
         });
       };
 
-      if (headers&&typeof headers === 'object') {
+      if (headers && typeof headers === 'object') {
         Object.keys(headers)
           .forEach((key) => request.setRequestHeader(key, headers[key]));
       }
 
-      if (params&&typeof headers === 'object') {
+      if (params && typeof headers === 'object') {
         params = Object.keys(params)
           .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
           .join('&');
@@ -124,7 +120,7 @@
     constructor(message) {
       throw new Error(message)
     }
-  };
+  }
 
   class Bootsrapper {
     constructor() {
@@ -169,9 +165,10 @@
 
       elements = utils.getdomElemens(ctrlEelem);
 
-      ctrl.bindModel();
 
+      ctrl.bindModel();
       ctrl.bindElements(elements);
+
       console.log('Binded ctrl:', ctrl)
     };
 
@@ -181,22 +178,12 @@
   }
 
   class Scope {
-    getModel() {
-      let mapModel = function(obj) {
-        let result = {}
-        if (typeof obj === 'object' && !Array.isArray(obj)) {
-          result = Object.keys(obj).reduce((mappedData, key) => {
+    setToPath(path, value) {
+      utils.objectPath(this, path, value);
+    }
 
-            mappedData[key] = mapModel(obj[key])
-
-            return mappedData;
-          }, {});
-        }
-
-        return result;
-      }
-
-      return mapModel(this);
+    getFromPath(path) {
+      return utils.objectPath(this, path)
     }
   }
 
@@ -207,6 +194,7 @@
     constructor(name, callback) {
       this.ctrlName = name;
       this.callback = callback;
+      this.modelView = {};
     }
 
     bindModel() {
@@ -230,7 +218,7 @@
       });
 
       this.callback.call(this.scope);
-      this.modelView = this.scope.getModel();
+      //this.modelView = this.scope.getModel();
     };
 
     registerElement(element, property, type) {
@@ -240,7 +228,7 @@
     };
 
     render(type, property, value) {
-      if (!this.modelView || !this.modelView[property][type]) {
+      if (!this.modelView[property] || !this.modelView[property][type]) {
         return;
       }
 
@@ -265,21 +253,24 @@
         element.bindingTypes = data;
 
         Object.keys(data).forEach((type) => {
-          if (type !== 'include' && !this.modelView.hasOwnProperty(data[type])) {
-            return;
-          }
+          let value = this.scope.getFromPath(data[type]);
 
+          if(type !== 'include' && utils.isUndefined(value)) return;
+
+          if (type !== 'include' && !this.modelView.hasOwnProperty(data[type])) {
+            this.modelView[data[type]] = {};
+          }
 
           if (!Binding_Types.hasOwnProperty(type)) {
             return new logError('Invalid binding type in: ' + type)
           }
 
           Binding_Types[type].init.call(this, element, this.scope, data[type]);
-          Binding_Types[type].render.call(this, element,  utils.getProperties(data[type], this.scope));
+          Binding_Types[type].render.call(this, element, value);
         });
       });
     };
-  };
+  }
 
   class Router {
     constructor(fn) {
@@ -333,7 +324,7 @@
 
     check(current = this.getCurrent()){
       let routeParams = {}
-        , keys
+        , keys;
 
       this.routes.forEach((state) => {
         keys = state.url.match(PARAMETER_REGEXP);
@@ -352,7 +343,7 @@
 
           return this;
         }
-      })
+      });
 
       return this;
     };
@@ -444,7 +435,7 @@
 
         setValue = (event) => {
           element.isTouched = true;
-          scope[property] = event.target.value;
+          scope.setToPath(property, event.target.value);
         };
 
         eventsTypes = {
@@ -452,14 +443,14 @@
             name: 'change',
             fn: (event) => {
               element.isTouched = true;
-              scope[property] = event.target.checked;
+              scope.setToPath(property, event.target.checked);
             }
           }),
           'radio': () => ({
             name: 'change',
             fn: setValue
           })
-        }
+        };
 
         event = eventsTypes.hasOwnProperty(element.type)
           ? eventsTypes[element.type]()
@@ -495,31 +486,37 @@
     },
     click: {
       init: function(element, scope, property) {
-        if (typeof scope[property] !== 'function') {
+        let fn = scope.getFromPath(property);
+
+        if (typeof fn !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('click',() => scope[property](), false);
+        element.addEventListener('click',() => fn.call(scope), false);
       },
       render: () => true
     },
     dblclick: {
       init: function(element, scope, property) {
-        if (typeof scope[property] !== 'function') {
+        let fn = scope.getFromPath(property);
+
+        if (typeof fn !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('dblclick',() => scope[property](), false);
+        element.addEventListener('dblclick',() => fn.call(scope), false);
       },
       render: () => true
     },
     change: {
       init: function(element, scope, property) {
-        if (typeof scope[property] !== 'function') {
+        let fn = scope.getFromPath(property);
+
+        if (typeof fn !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('change', () => scope[property](), false);
+        element.addEventListener('change', () => fn.call(scope), false);
       },
       render: () => true
     },
@@ -546,7 +543,9 @@
     },
     repeat: {
       init: function(element, scope, property) {
-        if (!Array.isArray(scope[property])) {
+        let arr = scope.getFromPath(property);
+
+        if (!Array.isArray(arr)) {
           return new logError(`SixthJs: Property [${property}] must be an Array.`)
         }
 
@@ -559,7 +558,7 @@
         let comments = {
           start: document.createComment(REPEAT.START),
           stop: document.createComment(REPEAT.STOP)
-        }
+        };
 
         element.helpers = comments;
         parent.insertBefore(comments.start, element);
@@ -572,7 +571,7 @@
 
         this.registerElement(element, property, 'repeat');
 
-        scope[property] = new Proxy(scope[property], {
+        let watcher = new Proxy(arr, {
           set: (model, property, value) => {
             model[property] = value
 
@@ -583,6 +582,7 @@
             return true;
           }
         });
+        scope.setToPath(property, watcher);
 
         parent.removeChild(element);
       },
@@ -592,7 +592,7 @@
           , genItem = element.helpers.start.nextSibling;
 
         while (genItem && (genItem.nodeValue !== REPEAT.STOP)) {
-          genItem = genItem.nextSibling
+          genItem = genItem.nextSibling;
           genItem.previousSibling.remove()
         }
 
@@ -614,7 +614,7 @@
                   Binding_Types[type].render.call(this, node, item);
                 } else {
                   Binding_Types[type].init.call(this, node, this.scope, data[type]);
-                  Binding_Types[type].render.call(this, node, this.scope[data[type]]);
+                  Binding_Types[type].render.call(this, node, this.scope.getFromPath(data[type]));
                 }
               }
             }

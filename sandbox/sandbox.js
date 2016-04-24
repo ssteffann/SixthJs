@@ -38,7 +38,7 @@ sixth.controller('testController', function() {
     let time = new Date();
 
     return `${time.toLocaleTimeString()} ${time.toLocaleDateString()}`;
-  }
+  };
 
 
   this.time = getTime();
@@ -71,12 +71,14 @@ sixth.controller('testController', function() {
   .controller('RepeaterCtrl', function() {
     this.collection = ['test', 'test2', 'test3', 'test4'];
 
-    this.addItem = function() {
-      let item = `New Item: ${this.counter} `;
+    this.wrapper = {
+      addItem: function () {
+        let item = `New Item: ${this.counter} `;
 
-      this.collection.push(item);
-      console.log(this.collection)
-    }
+        this.collection.push(item);
+        console.log(this.collection)
+      }
+    };
 
     this.removeItem = function() {
       this.collection.splice(-1, 1)
