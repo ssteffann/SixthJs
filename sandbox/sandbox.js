@@ -42,7 +42,7 @@ sixth.controller('testController', function() {
 
 
   this.time = getTime();
- // setInterval(() => this.myObj.otherOne.test +=1, 1000)
+
   setInterval(() => this.time = getTime(), 1000);
 })
 
@@ -69,19 +69,19 @@ sixth.controller('testController', function() {
   })
 
   .controller('RepeaterCtrl', function() {
-    this.collection = ['test', 'test2', 'test3', 'test4'];
+    this.collection = { items:['test', 'test2', 'test3', 'test4'] };
 
     this.wrapper = {
       addItem: function () {
         let item = `New Item: ${this.counter} `;
 
-        this.collection.push(item);
+        this.collection.items.push(item);
         console.log(this.collection)
       }
     };
 
     this.removeItem = function() {
-      this.collection.splice(-1, 1)
+      this.collection.items.splice(-1, 1)
       console.log(this.collection)
     };
   })
@@ -89,10 +89,18 @@ sixth.controller('testController', function() {
   .controller('DotNotationCtrl', function(){
     this.myObj = {
       label: {
-        test: 'Work in progress'
+        test: 0,
+        other: 'asd'
       },
       property: 'work'
     };
+
+    this.increment = function() {
+      this.myObj.label.test +=1;
+
+      console.log('increment', this.myObj.label.test)
+    }
+   // setInterval(() => this.myObj.label.test +=1, 1000)
   })
 
   .controller('childColtroller', function() {

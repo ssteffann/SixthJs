@@ -39,6 +39,7 @@
 
       return this.objectPath(obj[path[0]], path.slice(1), value);
     },
+
     forEachNode: (elem, fn) => {
       if(!elem) return;
 
@@ -195,6 +196,44 @@
       this.ctrlName = name;
       this.callback = callback;
       this.modelView = {};
+      this.proxies = new Map();
+    }
+
+    customBind(property) {
+      let obj
+        , proxy
+        , parrent;
+
+      if(typeof property !== 'string') return;
+
+      parrent = property.substr(0, property.lastIndexOf('.')) || false;
+
+      if (!parrent || this.proxies.has(parrent)) return;
+
+      obj = this.scope.getFromPath(parrent);
+
+      if (typeof obj !== 'object' || Array.isArray(obj)) return;
+
+      this.proxies.set(parrent, 'registered');
+
+      proxy = new Proxy(obj, {
+        set: (model, prop, value) => {
+          let oldValue = model[prop];
+
+          if (oldValue === value) {
+            return false;
+          }
+
+          model[prop] = value
+
+          RENDER_TYPES.forEach((type) => this.render(type, `${parrent}.${prop}`, value));
+
+          return true;
+        }
+      });
+
+      //TODO Find a better solution for this
+      eval(`this.scope.${parrent} = proxy;`);
     }
 
     bindModel() {
@@ -218,7 +257,6 @@
       });
 
       this.callback.call(this.scope);
-      //this.modelView = this.scope.getModel();
     };
 
     registerElement(element, property, type) {
@@ -247,10 +285,9 @@
      */
     bindElements(elements) {
       utils.forEachNode(elements, (element) => {
-
         let data = utils.parseAttrData(element.getAttribute(BIND_ATTR));
 
-        element.bindingTypes = data;
+        element.$bindingTypes = data;
 
         Object.keys(data).forEach((type) => {
           let value = this.scope.getFromPath(data[type]);
@@ -432,6 +469,7 @@
         }
 
         (!stopRegister) && this.registerElement(element, property, 'model')
+        this.customBind(property);
 
         setValue = (event) => {
           element.isTouched = true;
@@ -475,8 +513,13 @@
     },
     text: {
       init: function(element, scope, property, stopRegister) {
+        let keys
+          , obj
+          , proxy;
         //console.log('init');
-        (!stopRegister) && this.registerElement(element, property, 'text')
+        (!stopRegister) && this.registerElement(element, property, 'text');
+
+        this.customBind(property)
       },
       render: function(element, value) {
         //console.log('render text')
@@ -549,11 +592,9 @@
           return new logError(`SixthJs: Property [${property}] must be an Array.`)
         }
 
-        if (!element.bindingTypes.alias) {
-          return;
-        }
+        if (!element.$bindingTypes.alias)  return;
 
-        let copy = utils.copyObj(element.bindingTypes);
+        let copy = utils.copyObj(element.$bindingTypes);
         let parent = element.parentNode;
         let comments = {
           start: document.createComment(REPEAT.START),
@@ -600,25 +641,24 @@
           let clone = element.cloneNode(true)
             , children = utils.getdomElemens(clone);
 
-          for (let i in children) {
-            let node = children[i]
-              , data;
+          utils.forEachNode(children, (node) => {
+            let data;
 
-            if (node.tagName) {
-              data = utils.parseAttrData(node.getAttribute(BIND_ATTR));
+            if (!node.tagName) return;
 
-              for (let type in data) {
+            data = utils.parseAttrData(node.getAttribute(BIND_ATTR));
 
-                if (data[type] === element.bindingTypes.alias) {
-                  Binding_Types[type].init.call(this, node, value, index, true);
-                  Binding_Types[type].render.call(this, node, item);
-                } else {
-                  Binding_Types[type].init.call(this, node, this.scope, data[type]);
-                  Binding_Types[type].render.call(this, node, this.scope.getFromPath(data[type]));
-                }
+            for (let type in data) {
+
+              if (data[type] === element.$bindingTypes.alias) {
+                Binding_Types[type].init.call(this, node, value, index, true);
+                Binding_Types[type].render.call(this, node, item);
+              } else {
+                Binding_Types[type].init.call(this, node, this.scope, data[type]);
+                Binding_Types[type].render.call(this, node, this.scope.getFromPath(data[type]));
               }
             }
-          }
+          });
 
           newElements.appendChild(clone);
         });

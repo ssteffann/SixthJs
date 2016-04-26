@@ -7,7 +7,7 @@
   <p>Repeater: <button data-bind="{click: removeItem}">Remove item</button></p>
 
   <ul>
-    <li data-bind="{ repeat:collection, alias: item}">
+    <li data-bind="{ repeat:collection.items, alias: item}">
       Item: <span data-bind="{text: item}"></span>
     </li>
   </ul>

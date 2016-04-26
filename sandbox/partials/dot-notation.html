@@ -1,4 +1,15 @@
 <div>
   Dot Notation:
   <span data-bind="{text: myObj.label.test}"></span>
+
+  <div>
+    <button data-bind="{click: increment}">Increment</button>
+  </div>
+
+  <div >
+    <input type="text" data-bind="{ model: myObj.label.other}">
+    <div>
+      Rezult: <span data-bind="{text: myObj.label.other}"></span>
+    </div>
+  </div>
 </div>
