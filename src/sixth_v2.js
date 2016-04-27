@@ -78,8 +78,10 @@
     }
   };
 
-  http = function(options) {
+  http = function(options, cache) {
     return new Promise((resolve, reject) => {
+      if(cache) return resolve(cache);
+
       let request = new XMLHttpRequest()
         , { method, url, params, headers} = options;
 
@@ -120,6 +122,39 @@
   class logError {
     constructor(message) {
       throw new Error(message)
+    }
+  }
+
+  class Html {
+    constructor(http, bootstrapper) {
+      this.http = http;
+      this.bootstrapper = bootstrapper;
+      this.templateCache = new Map();
+    }
+
+    getTemplate(url) {
+      return this.http({ method: 'GET', url: url }, this.templateCache.get(url))
+        .then((html) => {
+          if (!this.templateCache.has(url)) {
+            this.templateCache.set(url, html)
+          };
+
+          return html;
+        })
+    }
+
+    registerTemplate(ctrlName, parrent, html){
+      let div = document.createElement('div')
+        , fragment = document.createDocumentFragment();
+
+      div.innerHTML = html;
+      parrent.innerHTML = '';
+
+      fragment.appendChild(div);
+
+      this.bootstrapper.registerElement(ctrlName, fragment);
+
+      parrent.appendChild(fragment);
     }
   }
 
@@ -166,7 +201,7 @@
 
       elements = utils.getdomElemens(ctrlEelem);
 
-
+      ctrl.clear();
       ctrl.bindModel();
       ctrl.bindElements(elements);
 
@@ -197,6 +232,11 @@
       this.callback = callback;
       this.modelView = {};
       this.proxies = new Map();
+    }
+
+    clear(){
+      this.modelView = {};
+      this.proxies.clear();
     }
 
     customBind(property) {
@@ -232,16 +272,16 @@
         }
       });
 
-      //TODO Find a better solution for this
-      eval(`this.scope.${parrent} = proxy;`);
+      return new Function('proxy', `this.scope.${parrent} = proxy;`)
+        .call(this, proxy);
     }
 
     bindModel() {
       this.scope = new Proxy(new Scope(), {
         set: (model, property, value) => {
-/*          console.log('model', model)
-          console.log('property', property)
-          console.log('value', value)*/
+          /*          console.log('model', model)
+           console.log('property', property)
+           console.log('value', value)*/
 
           let oldValue = model[property];
           if (oldValue === value) {
@@ -425,24 +465,13 @@
   }
 
   let bootsrapper = new Bootsrapper();
+  let tplEngine = new Html(http, bootsrapper);
 
   self.route = new Router((state, params) => {
     let element = document.querySelector(`[${DATA_VIEW}]`)
 
-    self.$http.get(state.templateUrl)
-      .then((html)=> {
-        let div = document.createElement('div')
-          , fragment = document.createDocumentFragment();
-
-        div.innerHTML = html;
-        element.innerHTML = '';
-
-        fragment.appendChild(div);
-
-        bootsrapper.registerElement(state.controller, fragment);
-
-        element.appendChild(fragment);
-      })
+    tplEngine.getTemplate(state.templateUrl)
+      .then((response) => tplEngine.registerTemplate(state.controller, element, response))
       .catch((error) => {
         throw new Error(error);
       });
@@ -563,6 +592,9 @@
       },
       render: () => true
     },
+    class: {
+
+    },
     if: {
       init: function(element, scope, property, stopRegister) {
         element.initHtml = element.innerHTML;
@@ -672,22 +704,12 @@
     },
     include: {
       init: function(element, scope, url) {
-        self.$http.get(url)
-          .then((html)=> {
-            let div = document.createElement('div')
-              , fragment = document.createDocumentFragment()
-              , elements;
 
-            div.innerHTML = html;
-
-            fragment.appendChild(div);
-
-            elements = utils.getdomElemens(fragment);
-            this.bindElements(elements);
-
-            element.appendChild(fragment);
-          })
-
+        tplEngine.getTemplate(url)
+          .then((response) => tplEngine.registerTemplate(this.ctrlName, element, response))
+          .catch((error) => {
+            throw new Error(error);
+          });
       },
       render: () => true
     },
