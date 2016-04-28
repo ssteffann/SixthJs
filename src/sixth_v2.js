@@ -706,7 +706,18 @@
       init: function(element, scope, url) {
 
         tplEngine.getTemplate(url)
-          .then((response) => tplEngine.registerTemplate(this.ctrlName, element, response))
+          .then((response) => {
+
+
+            let compile = tmplEngine.compile(response);
+
+            console.log('compile', compile);
+            let html = compile.call(this.scope);
+            console.log('html', html);
+
+
+            tplEngine.registerTemplate(this.ctrlName, element, response)
+          })
           .catch((error) => {
             throw new Error(error);
           });
