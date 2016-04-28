@@ -1,12 +1,11 @@
 {
-  let self = {};
-  window.tmplEngine = self;
+
+
+  let tmplEngine = {};
 
   let tmplSettings = {
-    evaluate: /\{\{([\s\S]+?(\}?)+)\}\}/g,
     interpolate: /\{\{([\s\S]+?)\}\}/g,
     encode: /\{\{!([\s\S]+?)\}\}/g
-
   }
 
   let escapeHtml = function(html) {
@@ -28,22 +27,26 @@
 
   let unescape = (html) => html
     .replace(/\\('|\\)/g, "$1")
-    .replace(/[\r\t\n]/g, ' ');
+    .replace(/[\r\t\n]/g, '');
 
 
   let startend = {
     split: { start: "';out+=(this.", end: ");out+='", startendcode: "';out+=escapeHtml(" }
   }
 
-  self.compile = function(tmpl = ''){
+
+
+  tmplEngine.compile = function(tmpl = ''){
     let cse = startend.split
     , needHtmlEncode
     , sid = 0
     , indv
     , str = tmpl;
 
+    if(!tmpl.match(tmplSettings.interpolate)) return;
+
     let preComp = str
-      .replace(/(^|\r|\n)\t* +| +\t*(\r|\n|$)/g, ' ')
+      .replace(/(^|\r|\n)\t* +| +\t*(\r|\n|$)/g, '')
       .replace(/\r|\n|\t|\/\*[\s\S]*?\*\//g, '')
       .replace(/'|\\/g, "\\$&")
       .replace(tmplSettings.interpolate, (m, code) =>
@@ -68,14 +71,9 @@
     }
 
     try {
-      console.log('str', str)
       return new Function('test', str);
     } catch (e) {
-      console.log(e)
       console.log("Could not create a template function: " + str)
     }
-
   }
-
-
 }

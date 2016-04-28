@@ -19,6 +19,83 @@
   const HASH_REGEXP =/#(.*)$/;
 
   /** ***************************************************************** **/
+  let tmplEngine = {};
+
+  let tmplSettings = {
+    interpolate: /\{\{([\s\S]+?)\}\}/g,
+    encode: /\{\{!([\s\S]+?)\}\}/g
+  }
+
+  let escapeHtml = function(html) {
+    let entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '/': '&#x2F;',
+      '`': '&#x60;',
+      '=': '&#x3D;'
+    };
+
+    return html
+      ? html.toString().replace(/[&<>"'`=\/]/g, (s) => entityMap[s] || s)
+      : '';
+  };
+
+  let unescape = (html) => html
+    .replace(/\\('|\\)/g, "$1")
+    .replace(/[\r\t\n]/g, '');
+
+
+  let startend = {
+    split: { start: "';out+=(this.", end: ");out+='", startendcode: "';out+=escapeHtml(" }
+  }
+
+
+
+  tmplEngine.compile = function(tmpl = ''){
+    let cse = startend.split
+      , needHtmlEncode
+      , sid = 0
+      , indv
+      , str = tmpl;
+
+/*    if(!tmpl.match(tmplSettings.interpolate)) return;*/
+
+    let preComp = str
+      .replace(/(^|\r|\n)\t* +| +\t*(\r|\n|$)/g, '')
+      .replace(/\r|\n|\t|\/\*[\s\S]*?\*\//g, '')
+      .replace(/'|\\/g, "\\$&")
+      .replace(tmplSettings.interpolate, (m, code) =>
+        `${cse.start}${unescape(code)}${cse.end}`)
+      .replace(tmplSettings.encode, (m, code) =>
+      {
+        needHtmlEncode = true;
+
+        return `${cse.startendcode}${unescape(code)}${cse.end}`
+      });
+
+    str = (`let out = '${preComp}';return out;`);
+
+    str.replace(/\n/g, "\\n")
+      .replace(/\t/g, '\\t')
+      .replace(/\r/g, "\\r")
+      .replace(/(\s|;|\}|^|\{)out\+='';/g, '$1')
+      .replace(/\+''/g, "");
+
+    if(needHtmlEncode) {
+      str = `let escapeHtml=${escapeHtml};${str}`;
+    }
+
+    try {
+      return new Function('test', str);
+    } catch (e) {
+      console.log("Could not create a template function: " + str)
+    }
+  }
+
+  /** ***************************************************************** **/
 
   let self = {}
     , Binding_Types
@@ -199,12 +276,29 @@
 
       if(!ctrl || !ctrlEelem) return;
 
-      elements = utils.getdomElemens(ctrlEelem);
+
+      let compiledFn = tmplEngine.compile(ctrlEelem.innerHTML);
+
+
+      let compiledHtml = compiledFn.call(ctrl.scope);
+
+
+      let frag = document.createDocumentFragment();
+      let div = document.createElement('div');
+      div.innerHTML = compiledHtml;
+      console.log('compiledHtml', compiledHtml)
+      console.log('div', div)
+      frag.appendChild(div);
+
+
+      elements = utils.getdomElemens(frag);
 
       ctrl.clear();
       ctrl.bindModel();
       ctrl.bindElements(elements);
 
+      ctrlEelem.innerHTML = '';
+      ctrlEelem.appendChild(frag);
       console.log('Binded ctrl:', ctrl)
     };
 
@@ -707,15 +801,6 @@
 
         tplEngine.getTemplate(url)
           .then((response) => {
-
-
-            let compile = tmplEngine.compile(response);
-
-            console.log('compile', compile);
-            let html = compile.call(this.scope);
-            console.log('html', html);
-
-
             tplEngine.registerTemplate(this.ctrlName, element, response)
           })
           .catch((error) => {
