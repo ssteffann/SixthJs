@@ -90,7 +90,7 @@ sixth.controller('testController', function() {
     this.myObj = {
       label: {
         test: 0,
-        other: 'asd'
+        other: 'www.test.ro/abracadabra'
       },
       property: 'work'
     };

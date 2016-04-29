@@ -3,13 +3,13 @@
     <input type="text" data-bind="{ model:test }">
   </div>
 
-  <p>Result: <span data-bind="{ text:test }"></span></p>
+  <p>Result: {{ test }}</p>
 </div>
 
 <div>
   <textarea data-bind="{model:textarea}"></textarea>
 
-  <p>Result: <span data-bind="{text:textarea}"></span></p>
+  <p>Result: {{ textarea }}</p>
 </div>
 
 
@@ -28,5 +28,5 @@
     <option value="someText">Some text</option>
   </select>
 
-  <p>Result: <span data-bind="{ text:select }"></span></p>
+  <p>Result: {{ select }}</p>
 </div>

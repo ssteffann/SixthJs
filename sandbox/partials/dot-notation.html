@@ -1,6 +1,5 @@
 <div>
-  Dot Notation:
-  <span data-bind="{text: myObj.label.test}"></span>
+  Dot Notation:{{ myObj.label.test }}
 
   <div>
     <button data-bind="{click: increment}">Increment</button>
@@ -9,10 +8,10 @@
   <div>
     <input type="text" data-bind="{ model: myObj.label.other}">
     <div>
-      Rezult: <span data-bind="{text: myObj.label.other}"></span>
+      Rezult: {{ myObj.label.other }}
     </div>
   </div>
-
+   Test for this {{ test }} {{otherTest}}
 </div>
 
 <div data-bind="{include: partials/interpolation.html}"></div>

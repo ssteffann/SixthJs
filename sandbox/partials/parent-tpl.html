@@ -13,7 +13,7 @@
         <input type="text" data-bind="{model:child}">
       </div>
 
-      <p>Result: <span data-bind="{text:child}"></span></p>
+      <p>Result: {{ child }}</p>
     </div>
 
     <div>
@@ -22,7 +22,7 @@
         <a href="#" data-bind="{click:clickLink}">I'm a link click me</a>
       </div>
 
-      <p>Result from click: <span data-bind="{text:function}"></span></p>
+      <p>Result from click: {{ function }}</p>
     </div>
   </div>
 </div>
