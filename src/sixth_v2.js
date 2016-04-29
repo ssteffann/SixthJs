@@ -238,7 +238,7 @@
 
         tmplEngine.getTemplate(url)
           .then((response) => {
-            tmplEngine.registerTemplate(this.ctrlName, element, response)
+            tmplEngine.registerTemplate(this.ctrlName, element, response, true)
           })
           .catch((error) => {
             throw new Error(error);
@@ -387,7 +387,7 @@
             Binding_Types.text.init.call(this, obj, this.scope, prop);
             Binding_Types.text.render.call(this, obj);
           }
-        })
+        });
 
         if (!attr)  return;
 

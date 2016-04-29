@@ -44,7 +44,7 @@ class TemplateEngine {
       .replace(/[\r\t\n]/g, '');
   }
 
-  registerTemplate(ctrlName, parrent, html) {
+  registerTemplate(ctrlName, parrent, html, include) {
     let div = document.createElement('div')
       , fragment = document.createDocumentFragment();
 
@@ -53,7 +53,9 @@ class TemplateEngine {
 
     fragment.appendChild(div);
 
-    this.bootstrapper.registerElement(ctrlName, fragment);
+    include
+        ? this.bootstrapper.registerInclude(ctrlName, fragment)
+        : this.bootstrapper.registerElement(ctrlName, fragment);
 
     parrent.appendChild(fragment);
   }

@@ -24,10 +24,17 @@ class Bootstrapper {
     });
   }
 
+
   registerElement(name, elem) {
     this.ctrlElemMap.set(name, elem);
 
     this.build(name);
+
+    this.registerCtrlElements(elem);
+  }
+
+  registerInclude(name, elem){
+    this.build(name, elem);
 
     this.registerCtrlElements(elem);
   }
@@ -38,19 +45,22 @@ class Bootstrapper {
     this.build(name);
   }
 
-  build(ctrlName) {
+  build(ctrlName, elem) {
     let ctrl = this.ctrlMap.get(ctrlName)
-      , ctrlEelem = this.ctrlElemMap.get(ctrlName)
+      , ctrlEelem = elem || this.ctrlElemMap.get(ctrlName)
       , elements;
 
-    if (!ctrl|| !ctrlEelem) {
+    if (!ctrl || !ctrlEelem) {
       return;
     }
 
     elements = utils.getdomElemens(ctrlEelem);
 
-    ctrl.clear();
-    ctrl.bindModel();
+    if (!elem) {
+      ctrl.clear();
+      ctrl.bindModel();
+    }
+
     ctrl.bindElements(elements);
 
     console.log('Binded ctrl:', ctrl)
