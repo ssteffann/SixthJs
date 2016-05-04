@@ -12,7 +12,7 @@
     STOP: 'data-repeat-stop'
   }
   const RENDER_TYPES = ['model', 'text', 'if'];
-
+  const CTRL_ATTR = 'data-controller';
 
 
 
@@ -76,7 +76,7 @@
     },
     text: {
       init: function(element, scope, property, stopRegister) {
-        console.log('init',property, element);
+
         (!stopRegister) && this.registerElement(element, property, 'text');
 
         //this.customBind(property)
@@ -177,7 +177,7 @@
 
         let watcher = new Proxy(arr, {
           set: (model, property, value) => {
-            model[property] = value
+            model[property] = value;
 
             if (property === 'length') {
               Binding_Types.repeat.render.call(this, element, model);
@@ -371,6 +371,7 @@
         let attr = element.getAttribute(BIND_ATTR)
           , data;
 
+
         utils.forEachNode(element.childNodes, (child) => {
           let match;
 
@@ -378,12 +379,16 @@
 
           while (match = INTERPOLATE.exec(child.textContent)) {
             let prop = match[1].replace(/\s/g, '')
-              , obj = { elem: child, fn: tmplEngine.compile(child.textContent) };
+                , obj
+                , value = this.scope.getFromPath(prop);
+            
+            if (utils.isUndefined(value)) return;
 
             if (!this.modelView.hasOwnProperty(prop)) {
               this.modelView[prop] = {};
             }
 
+            obj =  { elem: child, fn: tmplEngine.compile(child.textContent) };
             Binding_Types.text.init.call(this, obj, this.scope, prop);
             Binding_Types.text.render.call(this, obj);
           }

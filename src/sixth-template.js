@@ -70,13 +70,14 @@ class TemplateEngine {
       .replace(/\r|\n|\t|\/\*[\s\S]*?\*\//g, '')
       .replace(/'|\\/g, "\\$&")
       .replace(INTERPOLATE, (m, code) => {
-        console.log('code', code)
+        console.log('code', code);
 
-        return `${cse.start}${this.unescape(code)}${cse.end}`;
+        return `${cse.start}${this.unescape(code)} || ''${cse.end}`;
       });
 
     str = (`let out = '${preComp}';return out;`);
 
+    console.log('string', str)
     str.replace(/\n/g, "\\n")
       .replace(/\t/g, '\\t')
       .replace(/\r/g, "\\r")
