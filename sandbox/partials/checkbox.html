@@ -5,8 +5,8 @@
     <input type="checkbox" data-bind="{model:checkbox2}"> Checkbox2
   </div>
 
-  <p>Result Checbox: {{ checkbox }}</p>
-  <p>Result Checkbox2: {{ checkbox2 }}</p>
+  <p data-bind="{class: { text-danger: checkbox }}">Result Checbox: {{ checkbox }}</p>
+  <p data-bind="{class: { text-info: checkbox2 }}">Result Checkbox2: {{ checkbox2 }}</p>
 
 </div>
 

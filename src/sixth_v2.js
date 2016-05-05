@@ -4,17 +4,16 @@
    * @type {string}
    */
 
-  const MODEL_ATTR = 'data-model';
   const BIND_ATTR = 'data-bind';
   const DATA_VIEW = 'data-view';
   const REPEAT = {
     START: 'data-repeat-start',
     STOP: 'data-repeat-stop'
-  }
-  const RENDER_TYPES = ['model', 'text', 'if'];
+  };
+
+  const EXCLUDED_TYPES = { class: true, include: true };
+  const RENDER_TYPES = ['class', 'model', 'text', 'if'];
   const CTRL_ATTR = 'data-controller';
-
-
 
 
 
@@ -76,14 +75,10 @@
     },
     text: {
       init: function(element, scope, property, stopRegister) {
-
         (!stopRegister) && this.registerElement(element, property, 'text');
 
-        //this.customBind(property)
       },
       render: function(obj, value) {
-        //console.log('render text')
-
         obj.elem.textContent = obj.fn.call(this.scope, value);
       }
     },
@@ -124,11 +119,21 @@
       render: () => true
     },
     class: {
-
-    },
-    alias:{
-      init: () => true,
-      render: () => true,
+      init: function(element, scope, property, stopRegister) {
+        for (let key in property) {
+          //TODO Here might be a problem if more than one class is defined
+          element.$class = key;
+          (!stopRegister) && this.registerElement(element, property[key], 'class');
+          this.customBind(property[key]);
+        }
+      },
+      render: function(element, value) {
+        //TODO Solve the problem with init render
+        console.log('value', value)
+        value
+            ? element.classList.add(element.$class)
+            : element.classList.remove(element.$class);
+      }
     },
     if: {
       init: function(element, scope, property, stopRegister) {
@@ -150,6 +155,10 @@
         }
 
       }
+    },
+    alias: {
+      init: () => true,
+      render: () => true
     },
     repeat: {
       init: function(element, scope, property) {
@@ -179,9 +188,6 @@
         element.setAttribute(BIND_ATTR, JSON.stringify(copy));
 
         this.registerElement(element, property, 'repeat');
-
-
-
 
         let watcher = new Proxy(arr, {
           set: (model, property, value) => {
@@ -213,7 +219,7 @@
           let clone = element.cloneNode(true)
             , children = utils.getdomElemens(clone);
 
-          children = children.length ? children : [clone]
+          children = children.length ? children : [clone];
 
           this.bindElements(children, item, alias);
 
@@ -222,10 +228,6 @@
 
         parent.insertBefore(newElements, element.helpers.stop);
       }
-    },
-    item: {
-      init: () => true,
-      render: () => true
     },
     include: {
       init: function(element, scope, url) {
@@ -238,10 +240,6 @@
             throw new Error(error);
           });
       },
-      render: () => true
-    },
-    view: {
-      init: () => true,
       render: () => true
     }
   };
@@ -307,7 +305,7 @@
             return false;
           }
 
-          model[prop] = value
+          model[prop] = value;
 
           RENDER_TYPES.forEach((type) => this.render(type, `${parrent}.${prop}`, value));
 
@@ -337,6 +335,10 @@
     };
 
     registerElement(element, property, type) {
+      if(!this.modelView.hasOwnProperty(property)) {
+        this.modelView[property] = {};
+      }
+
       this.modelView[property][type]
         ? this.modelView[property][type].push(element)
         : this.modelView[property][type] = [element];
@@ -364,11 +366,7 @@
       let init = (element, property, type, item = null) => {
         let value = item || this.scope.getFromPath(property);
 
-        if (type !== 'include' && utils.isUndefined(value)) return false;
-
-        if (type !== 'include'&& !this.modelView.hasOwnProperty(property)) {
-          this.modelView[property] = {};
-        }
+        if (!EXCLUDED_TYPES[type] && utils.isUndefined(value)) return false;
 
         Binding_Types[type].init.call(this, element, this.scope, property, item);
         Binding_Types[type].render.call(this, element, value);
