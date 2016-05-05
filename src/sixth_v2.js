@@ -377,7 +377,7 @@
           if (child.nodeType !== 3) return;
 
           while (match = INTERPOLATE.exec(child.textContent)) {
-            let prop = match[1].replace(/\s/g, '')
+            let prop = match[1].replace(/\s+/g, '')
               , obj = { elem: child, fn: tmplEngine.compile(child.textContent) };
 
             if (!this.modelView.hasOwnProperty(prop)) {

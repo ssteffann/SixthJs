@@ -1,3 +1,9 @@
+class logError {
+  constructor(message) {
+    throw new Error(message)
+  }
+}
+
 let utils = {
   objectPath: function(obj, path, value) {
     if (typeof path == 'string') {
@@ -48,10 +54,13 @@ let utils = {
   },
   parseAttrData: (attrValue) => {
     try {
-      let json = attrValue.replace(/[.\w\d\/-]+/g, '"$&"');
+      let json = attrValue
+        .replace(/\s+/g, '')
+        .replace(/[.\w\d\/>-]+/g, '"$&"');
 
       return JSON.parse(json);
     } catch (err) {
+
       new logError('Invalid syntax in binding: ' + attrValue)
     }
   }
