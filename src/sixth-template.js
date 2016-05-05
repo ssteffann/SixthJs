@@ -60,9 +60,8 @@ class TemplateEngine {
     parrent.appendChild(fragment);
   }
 
-  compile(tmpl = '') {
-    let cse = { start: "';out+=(this.", end: ");out+='" }
-      , str = tmpl
+  compile(tmpl = '', arg = '') {
+    let str = tmpl
       , preComp;
 
     preComp = str
@@ -70,13 +69,14 @@ class TemplateEngine {
       .replace(/\r|\n|\t|\/\*[\s\S]*?\*\//g, '')
       .replace(/'|\\/g, "\\$&")
       .replace(INTERPOLATE, (m, code) => {
-        console.log('code', code)
+        let sp = arg ? ' ' : 'this.';
 
-        return `${cse.start}${this.unescape(code)}${cse.end}`;
+        return `';out+=(${sp}${this.unescape(code)});out+='`;
       });
 
     str = (`let out = '${preComp}';return out;`);
 
+    console.log('string', str)
     str.replace(/\n/g, "\\n")
       .replace(/\t/g, '\\t')
       .replace(/\r/g, "\\r")
@@ -84,7 +84,7 @@ class TemplateEngine {
       .replace(/\+''/g, "");
 
     try {
-      return new Function(str);
+      return new Function(arg,str);
     } catch (e) {
       console.log("Could not create a template function: " + str)
     }

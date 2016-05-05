@@ -12,7 +12,7 @@
     STOP: 'data-repeat-stop'
   }
   const RENDER_TYPES = ['model', 'text', 'if'];
-
+  const CTRL_ATTR = 'data-controller';
 
 
 
@@ -76,7 +76,7 @@
     },
     text: {
       init: function(element, scope, property, stopRegister) {
-        console.log('init',property, element);
+
         (!stopRegister) && this.registerElement(element, property, 'text');
 
         //this.customBind(property)
@@ -84,7 +84,7 @@
       render: function(obj, value) {
         //console.log('render text')
 
-        obj.elem.textContent = obj.fn.call(this.scope);
+        obj.elem.textContent = obj.fn.call(this.scope, value);
       }
     },
     click: {
@@ -125,6 +125,10 @@
     },
     class: {
 
+    },
+    alias:{
+      init: () => true,
+      render: () => true,
     },
     if: {
       init: function(element, scope, property, stopRegister) {
@@ -169,15 +173,19 @@
         parent.insertBefore(comments.stop, element);
 
         delete copy.repeat;
+        delete copy.alias;
 
         //TODO: Stringify the object
         element.setAttribute(BIND_ATTR, JSON.stringify(copy));
 
         this.registerElement(element, property, 'repeat');
 
+
+
+
         let watcher = new Proxy(arr, {
           set: (model, property, value) => {
-            model[property] = value
+            model[property] = value;
 
             if (property === 'length') {
               Binding_Types.repeat.render.call(this, element, model);
@@ -192,6 +200,7 @@
       },
       render: function(element, value) {
         let parent = element.helpers.start.parentNode
+          , alias = element.$bindingTypes.alias
           , newElements = document.createDocumentFragment()
           , genItem = element.helpers.start.nextSibling;
 
@@ -204,24 +213,9 @@
           let clone = element.cloneNode(true)
             , children = utils.getdomElemens(clone);
 
-          utils.forEachNode(children, (node) => {
-            let data;
+          children = children.length ? children : [clone]
 
-            if (!node.tagName) return;
-
-            data = utils.parseAttrData(node.getAttribute(BIND_ATTR));
-
-            for (let type in data) {
-
-              if (data[type] === element.$bindingTypes.alias) {
-                Binding_Types[type].init.call(this, node, value, index, true);
-                Binding_Types[type].render.call(this, node, item);
-              } else {
-                Binding_Types[type].init.call(this, node, this.scope, data[type]);
-                Binding_Types[type].render.call(this, node, this.scope.getFromPath(data[type]));
-              }
-            }
-          });
+          this.bindElements(children, item, alias);
 
           newElements.appendChild(clone);
         });
@@ -366,7 +360,22 @@
      * Sort each element with data-model attribut to it model in scope
      * @returns {*}
      */
-    bindElements(elements) {
+    bindElements(elements, item, alias) {
+      let init = (element, property, type, item = null) => {
+        let value = item || this.scope.getFromPath(property);
+
+        if (type !== 'include' && utils.isUndefined(value)) return false;
+
+        if (type !== 'include'&& !this.modelView.hasOwnProperty(property)) {
+          this.modelView[property] = {};
+        }
+
+        Binding_Types[type].init.call(this, element, this.scope, property, item);
+        Binding_Types[type].render.call(this, element, value);
+
+        return true;
+      };
+
       utils.forEachNode(elements, (element) => {
         let attr = element.getAttribute(BIND_ATTR)
           , data;
@@ -377,38 +386,27 @@
           if (child.nodeType !== 3) return;
 
           while (match = INTERPOLATE.exec(child.textContent)) {
-            let prop = match[1].replace(/\s+/g, '')
-              , obj = { elem: child, fn: tmplEngine.compile(child.textContent) };
+            let prop = match[1].replace(/\s/g, '')
+              , obj = {
+                elem: child,
+                fn: tmplEngine.compile(child.textContent, prop.includes(alias) ? alias : undefined)
+              };
 
-            if (!this.modelView.hasOwnProperty(prop)) {
-              this.modelView[prop] = {};
-            }
-
-            Binding_Types.text.init.call(this, obj, this.scope, prop);
-            Binding_Types.text.render.call(this, obj);
+            if(!init(obj, prop, 'text', item)) return;
           }
         });
 
-        if (!attr)  return;
+        if (!attr) return;
 
         data = utils.parseAttrData(attr);
         element.$bindingTypes = data;
 
         Object.keys(data).forEach((type) => {
-          let value = this.scope.getFromPath(data[type]);
-
-          if (type !== 'include' && utils.isUndefined(value)) return;
-
-          if (type !== 'include'&& !this.modelView.hasOwnProperty(data[type])) {
-            this.modelView[data[type]] = {};
-          }
-
           if (!Binding_Types.hasOwnProperty(type)) {
             return new logError('Invalid binding type in: ' + type)
           }
 
-          Binding_Types[type].init.call(this, element, this.scope, data[type]);
-          Binding_Types[type].render.call(this, element, value);
+          init(element, data[type], type)
         });
       });
     }

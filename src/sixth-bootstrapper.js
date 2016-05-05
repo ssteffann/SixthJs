@@ -24,7 +24,6 @@ class Bootstrapper {
     });
   }
 
-
   registerElement(name, elem) {
     this.ctrlElemMap.set(name, elem);
 

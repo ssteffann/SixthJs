@@ -12,5 +12,13 @@
     </li>
   </ul>
 
+  <p>Repeat in array of objects:</p>
+
+  <ul>
+    <li data-bind="{repeat: objectCollection.items, alias: obj}">
+      <a href="#">Object: {{ obj.name }} have url - {{obj.url}}</a>
+    </li>
+  </ul>
+
 
 </div>

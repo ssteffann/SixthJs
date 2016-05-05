@@ -70,6 +70,12 @@ sixth.controller('testController', function() {
 
   .controller('RepeaterCtrl', function() {
     this.collection = { items:['test', 'test2', 'test3', 'test4'] };
+    this.objectCollection = { items:[
+      { name: 'test', url: 'bla bla' },
+      { name: 'test2', url: 'bla foo' },
+      { name: 'test4', url: 'bla foo boo' },
+      { name: 'test5', url: 'bla foo boo moo' },
+    ] };
 
     this.wrapper = {
       addItem: function () {
