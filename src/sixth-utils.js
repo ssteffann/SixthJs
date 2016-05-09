@@ -58,8 +58,6 @@ let utils = {
         .replace(/\s+/g, '')
         .replace(/[.\w\d\/>-]+/g, '"$&"');
 
-      console.log('json', json)
-
       return JSON.parse(json);
     } catch (err) {
 

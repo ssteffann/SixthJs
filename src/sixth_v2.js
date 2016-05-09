@@ -3,7 +3,7 @@
    * Constants
    * @type {string}
    */
-
+  const TEXT_NODE = 3;
   const BIND_ATTR = 'data-bind';
   const DATA_VIEW = 'data-view';
   const REPEAT = {
@@ -12,16 +12,16 @@
   };
 
   const EXCLUDED_TYPES = { class: true, include: true };
-  const RENDER_TYPES = ['class', 'model', 'text', 'if'];
+  const RENDER_TYPES = ['class', 'model', 'attr', 'text', 'if'];
   const CTRL_ATTR = 'data-controller';
 
-
+  const SPACE_REG = /\s/g;
 
   /** ***************************************************************** **/
 
   let Binding_Types = {
     model: {
-      init: function(element, scope, property, stopRegister) {
+      init: function(element, property, stopRegister) {
         let setValue
           , eventsTypes
           , event;
@@ -35,7 +35,7 @@
 
         setValue = (event) => {
           element.isTouched = true;
-          scope.setToPath(property, event.target.value);
+          this.scope.setToPath(property, event.target.value);
         };
 
         eventsTypes = {
@@ -43,7 +43,7 @@
             name: 'change',
             fn: (event) => {
               element.isTouched = true;
-              scope.setToPath(property, event.target.checked);
+              this.scope.setToPath(property, event.target.checked);
             }
           }),
           'radio': () => ({
@@ -74,7 +74,7 @@
       }
     },
     text: {
-      init: function(element, scope, property, stopRegister) {
+      init: function(element, property, stopRegister) {
         (!stopRegister) && this.registerElement(element, property, 'text');
 
       },
@@ -82,61 +82,75 @@
         obj.elem.textContent = obj.fn.call(this.scope, value);
       }
     },
+    attr: {
+      init: function(element, property, stopRegister) {
+        (!stopRegister) && this.registerElement(element, property, 'attr');
+      },
+      render: function(obj, value) {
+        obj.elem.setAttribute(obj.name, obj.fn.call(this.scope))
+      }
+    },
     click: {
-      init: function(element, scope, property) {
-        let fn = scope.getFromPath(property);
+      init: function(element, property) {
+        let fn = this.scope.getFromPath(property);
 
         if (typeof fn !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('click',() => fn.call(scope), false);
+        element.addEventListener('click',() => fn.call(this.scope), false);
       },
       render: () => true
     },
     dblclick: {
-      init: function(element, scope, property) {
-        let fn = scope.getFromPath(property);
+      init: function(element, property) {
+        let fn = this.scope.getFromPath(property);
 
         if (typeof fn !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('dblclick',() => fn.call(scope), false);
+        element.addEventListener('dblclick',() => fn.call(this.scope), false);
       },
       render: () => true
     },
     change: {
-      init: function(element, scope, property) {
-        let fn = scope.getFromPath(property);
+      init: function(element, property) {
+        let fn = this.scope.getFromPath(property);
 
         if (typeof fn !== 'function') {
           return new logError(`SixthJs: ${property} is not a function.`)
         }
 
-        element.addEventListener('change', () => fn.call(scope), false);
+        element.addEventListener('change', () => fn.call(this.scope), false);
       },
       render: () => true
     },
     class: {
-      init: function(element, scope, property, stopRegister) {
+      init: function(element, property, stopRegister) {
+        element.$class  = !element.$class ? new Map() : element.$class;
+
         for (let key in property) {
-          //TODO Here might be a problem if more than one class is defined
-          element.$class = key;
-          (!stopRegister) && this.registerElement(element, property[key], 'class');
-          this.customBind(property[key]);
+          let value = property[key];
+
+          element.$class.set(value, key);
+
+          (!stopRegister) && this.registerElement(element, value, 'class');
+          this.customBind(value);
+
+          Binding_Types.class.render(element, this.scope.getFromPath(value), value);
         }
       },
-      render: function(element, value) {
-        //TODO Solve the problem with init render
-        console.log('value', value)
+      render: function(element, value, property) {
+        let $class =  element.$class.get(property);
+
         value
-            ? element.classList.add(element.$class)
-            : element.classList.remove(element.$class);
+            ? element.classList.add($class)
+            : element.classList.remove($class);
       }
     },
     if: {
-      init: function(element, scope, property, stopRegister) {
+      init: function(element, property, stopRegister) {
         element.initHtml = element.innerHTML;
 
         (!stopRegister) && this.registerElement(element, property, 'if')
@@ -153,7 +167,6 @@
         } else if (!value) {
           element.innerHTML = '';
         }
-
       }
     },
     alias: {
@@ -161,8 +174,11 @@
       render: () => true
     },
     repeat: {
-      init: function(element, scope, property) {
-        let arr = scope.getFromPath(property);
+      init: function(element, property) {
+        let arr = this.scope.getFromPath(property)
+          , copy
+          , parent
+          , comments;
 
         if (!Array.isArray(arr)) {
           return new logError(`SixthJs: Property [${property}] must be an Array.`)
@@ -170,9 +186,9 @@
 
         if (!element.$bindingTypes.alias)  return;
 
-        let copy = utils.copyObj(element.$bindingTypes);
-        let parent = element.parentNode;
-        let comments = {
+        copy = utils.copyObj(element.$bindingTypes);
+        parent = element.parentNode;
+        comments = {
           start: document.createComment(REPEAT.START),
           stop: document.createComment(REPEAT.STOP)
         };
@@ -184,7 +200,6 @@
         delete copy.repeat;
         delete copy.alias;
 
-        //TODO: Stringify the object
         element.setAttribute(BIND_ATTR, JSON.stringify(copy));
 
         this.registerElement(element, property, 'repeat');
@@ -200,14 +215,14 @@
             return true;
           }
         });
-        scope.setToPath(property, watcher);
+        this.scope.setToPath(property, watcher);
 
         parent.removeChild(element);
       },
       render: function(element, value) {
         let parent = element.helpers.start.parentNode
           , alias = element.$bindingTypes.alias
-          , newElements = document.createDocumentFragment()
+          , newElement = document.createDocumentFragment()
           , genItem = element.helpers.start.nextSibling;
 
         while (genItem && (genItem.nodeValue !== REPEAT.STOP)) {
@@ -223,15 +238,14 @@
 
           this.bindElements(children, item, alias);
 
-          newElements.appendChild(clone);
+          newElement.appendChild(clone);
         });
 
-        parent.insertBefore(newElements, element.helpers.stop);
+        parent.insertBefore(newElement, element.helpers.stop);
       }
     },
     include: {
-      init: function(element, scope, url) {
-
+      init: function(element, url) {
         tmplEngine.getTemplate(url)
           .then((response) => {
             tmplEngine.registerTemplate(this.ctrlName, element, response, true)
@@ -243,10 +257,6 @@
       render: () => true
     }
   };
-
-  let self = {};
-
-  window.sixth = self;
 
   class logError {
     constructor(message) {
@@ -301,12 +311,9 @@
         set: (model, prop, value) => {
           let oldValue = model[prop];
 
-          if (oldValue === value) {
-            return false;
-          }
+          if (oldValue === value) return false;
 
           model[prop] = value;
-
           RENDER_TYPES.forEach((type) => this.render(type, `${parrent}.${prop}`, value));
 
           return true;
@@ -324,7 +331,6 @@
           if (oldValue === value) return true;
 
           model[property] = value;
-
           RENDER_TYPES.forEach((type) => this.render(type, property, value));
 
           return true;
@@ -345,16 +351,14 @@
     };
 
     render(type, property, value) {
-      if (!this.modelView[property] || !this.modelView[property][type]) {
-        return;
-      }
+      if (!this.modelView[property] || !this.modelView[property][type]) return;
 
       this.modelView[property][type].forEach((element) => {
         if (element.isTouched) {
           return element.isTouched = false;
         }
 
-        Binding_Types[type].render.call(this, element, value);
+        Binding_Types[type].render.call(this, element, value, property);
       })
     };
 
@@ -368,30 +372,45 @@
 
         if (!EXCLUDED_TYPES[type] && utils.isUndefined(value)) return false;
 
-        Binding_Types[type].init.call(this, element, this.scope, property, item);
-        Binding_Types[type].render.call(this, element, value);
+        Binding_Types[type].init.call(this, element, property, item);
+        !EXCLUDED_TYPES[type] && Binding_Types[type].render.call(this, element, value);
 
         return true;
       };
+
+      let matchText = (elem, type, text, item = null, alias = null, name = null) => {
+        let match = INTERPOLATE.exec(text)
+          , prop
+          , obj;
+
+        if (!match) return;
+
+        prop = match[1].replace(SPACE_REG, '');
+
+        obj = {
+          name: name,
+          elem: elem,
+          fn: tmplEngine.compile(text, prop.includes(alias) ? alias : undefined)
+        };
+
+        while (match = INTERPOLATE.exec(text)) {
+          if(!init(obj, match[1].replace(SPACE_REG, ''), type, item)) return;
+        }
+      }
 
       utils.forEachNode(elements, (element) => {
         let attr = element.getAttribute(BIND_ATTR)
           , data;
 
+        if (element.hasAttributes()) {
+          utils.forEachNode(element.attributes, (attr) =>
+            matchText(element, 'attr', attr.value, item, alias, attr.name))
+        }
+
         utils.forEachNode(element.childNodes, (child) => {
-          let match;
+          if (child.nodeType !== TEXT_NODE) return;
 
-          if (child.nodeType !== 3) return;
-
-          while (match = INTERPOLATE.exec(child.textContent)) {
-            let prop = match[1].replace(/\s/g, '')
-              , obj = {
-                elem: child,
-                fn: tmplEngine.compile(child.textContent, prop.includes(alias) ? alias : undefined)
-              };
-
-            if(!init(obj, prop, 'text', item)) return;
-          }
+          matchText(child, 'text', child.textContent, item, alias)
         });
 
         if (!attr) return;
@@ -410,6 +429,12 @@
     }
   }
 
+
+  /** ***************************************************************** **/
+  let self = {};
+
+  window.sixth = self;
+
   let bootstrapper = new Bootstrapper();
   let tmplEngine = new TemplateEngine(http, bootstrapper);
 
@@ -418,9 +443,7 @@
 
     tmplEngine.getTemplate(state.templateUrl)
       .then((response) => tmplEngine.registerTemplate(state.controller, element, response))
-      .catch((error) => {
-        throw new Error(error);
-      });
+      .catch((error) => { throw error; });
   });
 
   self.$http = {
@@ -431,10 +454,6 @@
     'options': (url, params, headers) => http({ method: 'OPTIONS', url: url, params: params, headers: headers }),
     'head': (url, params, headers) => http({ method: 'HEAD', url: url, params: params, headers: headers }),
   };
-
-
-
-  /** ***************************************************************** **/
 
   self.controller = function(name, callback) {
     bootstrapper.registerCtrl(name, new Controller(name, callback));

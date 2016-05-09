@@ -86,6 +86,8 @@ sixth.controller('testController', function() {
       }
     };
 
+    this.tst = 'test';
+
     this.removeItem = function() {
       this.collection.items.splice(-1, 1)
       console.log(this.collection)
