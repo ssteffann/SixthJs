@@ -1,0 +1,32 @@
+<div>
+  <div>
+    <input type="text" data-bind="{ model:test }">
+  </div>
+
+  <p>Result: {{ test }}</p>
+</div>
+
+<div>
+  <textarea data-bind="{model:textarea}"></textarea>
+
+  <p>Result: {{ textarea }}</p>
+</div>
+
+
+<div>
+  <p>
+    <input type="checkbox" data-bind="{model: showData}">
+    Show Select
+  </p>
+</div>
+
+<div data-bind="{ if: showData}">
+  <select data-bind="{ model:select, change: onSelect} ">
+    <option></option>
+    <option value="test">Test</option>
+    <option value="testare">Testare</option>
+    <option value="someText">Some text</option>
+  </select>
+
+  <p>Result: {{ select }}</p>
+</div>
