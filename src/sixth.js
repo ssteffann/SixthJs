@@ -100,7 +100,7 @@
           return new logError(`SixthJs: Bind type model can't be applied on this element`);
         }
 
-        (!stopRegister) && this.registerElement(element, property, 'model')
+        (!stopRegister) && this.registerElement(element, property, 'model');
         this.customBind(property);
 
         setValue = (event) => {
@@ -146,6 +146,7 @@
     text: {
       init: function(element, property, stopRegister) {
         (!stopRegister) && this.registerElement(element, property, 'text');
+        this.customBind(property);
 
       },
       render: function(obj, value) {
@@ -155,6 +156,8 @@
     attr: {
       init: function(element, property, stopRegister) {
         (!stopRegister) && this.registerElement(element, property, 'attr');
+        this.customBind(property);
+
       },
       render: function(obj, value) {
         obj.elem.setAttribute(obj.name, obj.fn.call(this.scope, value))
@@ -647,6 +650,8 @@
       }
 
       ctrl.bindElements(elements);
+
+      console.log('binded ctrl', ctrl)
     }
 
     clearElements() {
@@ -886,5 +891,6 @@
   self.inject = function(name) {
     return service.get(name);
   };
+
 
 })(window, document);

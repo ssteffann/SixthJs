@@ -3,5 +3,12 @@ sixth.controller('MainCtrl', function(){
 
   this.routes = config.routes;
 
+  this.test = {
+    prop: {
+      ng: 'test'
+    }
+  };
+
+
   console.log('routes', this.routes)
 });

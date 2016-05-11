@@ -3,7 +3,7 @@ sixth.service('config', function(){
     {
       name: 'model',
       url: '/model',
-      controller: 'ModelCtrl',
+      controller: 'MainCtrl',
       templateUrl: 'partials/docs/model.html'
     },
     {

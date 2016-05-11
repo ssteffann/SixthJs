@@ -41,9 +41,11 @@ sixth.controller('testController', function() {
   };
 
 
-  this.time = getTime();
+  this.time ={
+    test: getTime()
+  }
 
-  setInterval(() => this.time = getTime(), 1000);
+  setInterval(() => this.time.test = getTime(), 1000);
 })
 
   .controller('CheckboxCtrl', function() {
