@@ -156,8 +156,8 @@
       init: function(element, property, stopRegister) {
         (!stopRegister) && this.registerElement(element, property, 'attr');
       },
-      render: function(obj) {
-        obj.elem.setAttribute(obj.name, obj.fn.call(this.scope))
+      render: function(obj, value) {
+        obj.elem.setAttribute(obj.name, obj.fn.call(this.scope, value))
       }
     },
     click: {
@@ -413,8 +413,6 @@
       return this;
     }
 
-  ;
-
     goTo(path = '') {
       this.html5Mode
         ? history.pushState(null, null, `${this.root}${this.clearSlashes(path)}`)
@@ -513,7 +511,7 @@
         .replace(/\r|\n|\t|\/\*[\s\S]*?\*\//g, '')
         .replace(/'|\\/g, "\\$&")
         .replace(INTERPOLATE, (m, code) => {
-          let sp = arg ? ' ' : 'this.';
+          let sp = arg ? '' : 'this.';
 
           return `';out+=(${sp}${this.unescape(code)});out+='`;
         });
@@ -670,6 +668,24 @@
   }
 
   /**
+   * Service
+   */
+
+  class Service {
+    constructor(){
+      this.services = new Map();
+    }
+
+    register(name, fn){
+      this.services.set(name, new fn())
+    }
+
+    get(name){
+      return this.services.get(name)
+    }
+  }
+
+  /**
    * Controller class that bind model and view
    */
   class Controller {
@@ -768,6 +784,7 @@
         if (!EXCLUDED_TYPES[type] && utils.isUndefined(value)) return false;
 
         Binding_Types[type].init.call(this, element, property, item);
+
         !EXCLUDED_TYPES[type] && Binding_Types[type].render.call(this, element, value);
 
         return true;
@@ -798,8 +815,10 @@
           , data;
 
         if (element.hasAttributes()) {
-          utils.forEachNode(element.attributes, (attr) =>
-            matchText(element, 'attr', attr.value, item, alias, attr.name))
+          utils.forEachNode(element.attributes, (attr) => {
+
+            matchText(element, 'attr', attr.value, item, alias, attr.name);
+          });
         }
 
         utils.forEachNode(element.childNodes, (child) => {
@@ -842,6 +861,7 @@
 
   let bootstrapper = new Bootstrapper(utils);
   let tmplEngine = new TemplateEngine(self.$http, bootstrapper);
+  let service = new Service();
 
   self.route = new Router((state, params) => {
     let element = document.querySelector(`[${DATA_VIEW}]`)
@@ -855,6 +875,16 @@
     bootstrapper.registerCtrl(name, new Controller(name, callback));
 
     return this;
-  }
+  };
+
+  self.service = function(name, fn) {
+    service.register(name, fn);
+
+    return this;
+  };
+
+  self.inject = function(name) {
+    return service.get(name);
+  };
 
 })(window, document);
