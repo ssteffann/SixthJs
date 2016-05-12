@@ -3,8 +3,10 @@
     <h2 class="sub-title text-center">data-bind:model</h2>
 
     <p>
-      Binding type: <code>model</code> works with elements <code>input</code>, <code>textarea</code>, <code>select</code>
-      and have the role of binding  and expose a property from <code>data-controller</code> scope.
+      Binding type: <code>model</code> works with elements
+      <code>input</code>,<code>textarea</code>, <code>select</code>
+      and have the role of binding and expose a property from
+      <code>data-controller</code> scope.
     </p>
 
     <strong>data-binding: model</strong> respond for:
@@ -20,18 +22,22 @@
     </ul>
 
     <p>
-      <strong>data-binding: model</strong> will try to bind given property to the scope by evaluating it.
+      <strong>data-binding: model</strong> will try to bind given property to
+      the scope by evaluating it.
       If the property is not defined on current scope, it will be ignored.
     </p>
 
     <p>
-      By default <code>data-bind: model</code> spy model by reference, not value, this is
-      important to know when binding inputs to model that are objects. If only properties of the
-      object change, watcher will not trigger and the input will not be re-rendered.
+      By default <code>data-bind: model</code> spy model by reference, not
+      value, this is
+      important to know when binding inputs to model that are objects. If only
+      properties of the
+      object change, watcher will not trigger and the input will not be
+      re-rendered.
     </p>
 
     <h3>Usasge:</h3>
-    <strong>data-bind: model</strong> is used as attribute:
+    <p><strong>data-bind: model</strong> is used as attribute:</p>
     <div class="code-block">
         <pre>
           <code class="language-markup">
@@ -44,8 +50,69 @@
         </pre>
     </div>
 
-
     <h3>Example:</h3>
-    <!--//code-block-->
+
+    <div class="code-block">
+        <pre>
+          <code class="language-html">
+            &lt;div data-controller="ExampleController" &gt;
+              &lt;form name="myForm"&gt;
+                Name:
+                &lt;input type="text"
+                          data-bind="{model: client.name}"/&gt;
+              &lt;/form&gt;
+              Result: user.name = {{ client.name }}
+            &lt;/div&gt;
+
+            &lt;script&gt;
+              sixth.controller('ExampleController', function(){
+                this.client = {
+                  name: 'SixthJs'
+                };
+              });
+            &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+
+    <div class="panel panel-default clearfix">
+      <div class="col-md-12">
+        <form name="myForm">
+          <div class="form-group col-md-4">
+            <label for="name">Name: </label>
+            <input type="text"
+                   id="name"
+                   class="form-control"
+                   data-bind="{model: user.name}">
+
+            Result:
+            <p> user.name = {{ user.name }}</p>
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for="name">Gender:</label>
+
+            <select class="form-control"
+                    data-bind="{model: user.gender}">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+
+            Result:
+            <p> user.gender = {{ user.gender }}</p>
+
+          </div>
+
+          <div class="form-group col-md-4">
+            <label for="message">Message: </label>
+            <textarea class="form-control"
+                      data-bind="{model: user.message}"></textarea>
+
+            Result:
+            <p> user.message = {{ user.message }}</p>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>

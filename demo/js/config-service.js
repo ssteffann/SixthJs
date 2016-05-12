@@ -1,55 +1,49 @@
 sixth.service('config', function(){
   this.routes = [
     {
-      name: 'model',
+      name: 'data-bind:model',
       url: '/model',
-      controller: 'MainCtrl',
+      controller: 'ExampleCtrl',
       templateUrl: 'partials/docs/model.html'
     },
     {
-      name: 'text',
+      name: 'data-bind:text',
       url: '/text',
-      controller: 'TextCtrl',
+      controller: 'ExampleCtrl',
       templateUrl: 'partials/docs/text.html'
     },
     {
-      name: 'attr',
-      url: '/attr',
-      controller: 'TextCtrl',
-      templateUrl: 'partials/docs/text.html'
-    },
-    {
-      name: 'click',
+      name: 'data-bind:click',
       url: '/click',
-      controller: 'ClickCtrl',
+      controller: 'ExampleCtrl',
       templateUrl: 'partials/docs/click.html'
     },
     {
-      name: 'dblclick',
+      name: 'data-bind:dblclick',
       url: '/dblclick',
       controller: 'ClickCtrl',
       templateUrl: 'partials/docs/click.html'
     },
     {
-      name: 'change',
+      name: 'data-bind:change',
       url: '/change',
       controller: 'ClickCtrl',
       templateUrl: 'partials/docs/click.html'
     },
     {
-      name: 'class',
+      name: 'data-bind:class',
       url: '/class',
       controller: 'ClassCtrl',
       templateUrl: 'partials/docs/class.html'
     },
     {
-      name: 'if',
+      name: 'data-bind:if',
       url: '/if',
       controller: 'IfCtrl',
       templateUrl: 'partials/docs/if.html'
     },
     {
-      name: 'repeat',
+      name: 'data-bind:repeat',
       url: '/repeat',
       controller: 'RepeatCtrl',
       templateUrl: 'partials/docs/repeat.html'
