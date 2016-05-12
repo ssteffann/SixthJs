@@ -13,22 +13,16 @@ sixth.service('config', function(){
       templateUrl: 'partials/docs/text.html'
     },
     {
-      name: 'data-bind:click',
-      url: '/click',
+      name: 'data-bind:click/dbclick',
+      url: '/event',
       controller: 'ExampleCtrl',
-      templateUrl: 'partials/docs/click.html'
-    },
-    {
-      name: 'data-bind:dblclick',
-      url: '/dblclick',
-      controller: 'ClickCtrl',
       templateUrl: 'partials/docs/click.html'
     },
     {
       name: 'data-bind:change',
       url: '/change',
-      controller: 'ClickCtrl',
-      templateUrl: 'partials/docs/click.html'
+      controller: 'ExampleCtrl',
+      templateUrl: 'partials/docs/change.html'
     },
     {
       name: 'data-bind:class',
