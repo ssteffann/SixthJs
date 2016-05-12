@@ -344,6 +344,7 @@
     constructor(fn) {
       this.handler = fn;
       this.routes = [];
+      this.view = '';
       this.root = DEFAULT_ROOT;
       this.html5Mode = false;
       this.default = {};
@@ -370,6 +371,10 @@
       return path.toString()
         .replace(/\/$/, '')
         .replace(/^\//, '');
+    }
+
+    onView(name) {
+      this.view = name;
     }
 
     getCurrent() {
@@ -425,6 +430,7 @@
     }
 
     register(state = {}) {
+      state.$view = this.view;
       this.routes.push(state);
 
       return this;
@@ -869,7 +875,7 @@
   let service = new Service();
 
   self.route = new Router((state, params) => {
-    let element = document.querySelector(`[${DATA_VIEW}]`)
+    let element = document.querySelector(`[${DATA_VIEW}="${state.$view}"]`);
 
     tmplEngine.getTemplate(state.templateUrl)
       .then((response) => tmplEngine.registerTemplate(state.controller, element, response))
