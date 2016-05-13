@@ -49,7 +49,7 @@
     },
 
     forEachNode: (elem, fn) => {
-      if (!elem|| !fn) {
+      if (!elem || !fn) {
         return;
       }
 
@@ -344,6 +344,7 @@
     constructor(fn) {
       this.handler = fn;
       this.routes = [];
+      this.parrent = '';
       this.view = '';
       this.root = DEFAULT_ROOT;
       this.html5Mode = false;
@@ -359,9 +360,9 @@
         : DEFAULT_ROOT;
 
       if (this.html5Mode) {
-        window.addEventListener('popstate', this.check);
+        window.addEventListener('popstate', () => this.check());
 
-        window.removeEventListener('hashchange', this.check)
+        window.removeEventListener('hashchange', () => this.check())
       }
 
       return this;
@@ -373,8 +374,50 @@
         .replace(/^\//, '');
     }
 
-    onView(name) {
-      this.view = name;
+    children(viewName) {
+      let length = this.routes.length
+      this.view = viewName || '';
+
+      if(!length) return this;
+
+      this.parrent = this.routes[length-1];
+
+      return this;
+    }
+
+    getParrents(state = {}) {
+      let parrents = [];
+      let checkParrents = (state) => {
+        if (!state.$parrent) return;
+
+          this.getParrents(state.$parrent);
+          parrents.push(state.$parrent)
+      };
+
+      checkParrents(state);
+
+      return parrents;
+    }
+
+    getParrentFrom(state = {}, level = 0) {
+      if (!state.$parrent && level) return '';
+      if (!state.$parrent && !level) return state;
+
+      return this.getParrentFrom(state.$parrent, level--)
+    }
+
+    up() {
+      let length = this.routes.length
+        , sibling;
+
+      if(!length) return this;
+
+      sibling = this.routes[length - 1];
+
+      this.parrent = this.getParrentFrom(sibling, 2);
+      this.view = this.parrent.$view || '';
+
+      return this;
     }
 
     getCurrent() {
@@ -392,7 +435,7 @@
         current = match ? match[1] : '';
       }
 
-      return current;//this.clearSlashes(current);
+      return current;
     }
 
     check(current = this.getCurrent()) {
@@ -413,7 +456,6 @@
           });
 
           this.handler(state, routeParams);
-
           return this;
         }
       });
@@ -430,8 +472,16 @@
     }
 
     register(state = {}) {
-      state.$view = this.view;
-      this.routes.push(state);
+      let copy = Object.assign({}, state);
+
+      copy.$view = this.view;
+
+      if(this.parrent){
+        copy.$parrent = this.parrent;
+        copy.url = `${this.clearSlashes(this.parrent.url)}/${this.clearSlashes(state.url)}`;
+      }
+
+      this.routes.push(copy);
 
       return this;
     }
@@ -527,7 +577,6 @@
 
       str = (`let out = '${preComp}';return out;`);
 
-      console.log('string', str)
       str.replace(/\n/g, "\\n")
         .replace(/\t/g, '\\t')
         .replace(/\r/g, "\\r")
@@ -537,7 +586,7 @@
       try {
         return new Function(arg,str);
       } catch (e) {
-        console.log("Could not create a template function: " + str)
+        console.warn("Could not create a template function: " + str)
       }
     }
   }
@@ -875,11 +924,18 @@
   let service = new Service();
 
   self.route = new Router((state, params) => {
-    let element = document.querySelector(`[${DATA_VIEW}="${state.$view}"]`);
-
     tmplEngine.getTemplate(state.templateUrl)
-      .then((response) => tmplEngine.registerTemplate(state.controller, element, response))
-      .catch((error) => { throw error; });
+      .then((response) => {
+        let element = document.querySelector(`[${DATA_VIEW}="${state.$view}"]`);
+
+        if (!element) {
+          return new logError(`Please define view element with attribute (data-view="${state.$view}")`)
+        }
+        tmplEngine.registerTemplate(state.controller, element, response)
+      })
+      .catch((error) => {
+        throw error;
+      });
   });
 
   self.controller = function(name, callback) {
