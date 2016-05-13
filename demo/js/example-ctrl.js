@@ -5,6 +5,10 @@ sixth.controller('ExampleCtrl', function() {
     message: 'Placeholder'
   };
 
+
+  this.danger = false;
+  this.info = false;
+
   this.clickAction = 'Make some action!!';
 
 

@@ -27,7 +27,7 @@ sixth.service('config', function(){
     {
       name: 'data-bind:class',
       url: '/class',
-      controller: 'ClassCtrl',
+      controller: 'ExampleCtrl',
       templateUrl: 'partials/docs/class.html'
     },
     {
