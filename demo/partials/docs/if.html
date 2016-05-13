@@ -1,29 +1,74 @@
 <div class="docs-inner">
   <div class="block">
-    <h3 class="sub-title text-center">if</h3>
+    <h2 class="sub-title text-center">data-bind:if</h2>
 
-    <p><a href="http://prismjs.com/" target="_blank">PrismJS</a> is used as
-      the syntax highlighter here.</p>
+    <p>
+      Binding type: <code>if</code> deletes or recreates a portion of the DOM tree
+      base on given property. If property asigned to binding type <code>if</code> is evaluated to
+      false value, then all children elements are removed from from DOM tree, in other case
+      a copy of the elements is inserted in DOM and all bindings are restored.
+    </p>
 
-    <p>Below are the details of the custom PrismJS build used in this
-      template. You can <a href="http://prismjs.com/download.html"
-                           target="_blank">build your own version</a> via
-      their website should you need to.</p>
-    <ul class="list-unstyled">
-      <li><strong>Compression level:</strong> Minified</li>
-      <li><strong>Theme:</strong> Okaidia</li>
-      <li><strong>Languages:</strong> Markup, CSS, C-like, JavaScript, PHP
-        and Python
-      </li>
-    </ul>
+    <p>
+      Binding type: <code>if</code> differs from <code>CSS</code> class "show" or "hide", because it doesn;t
+      use <code>CSS</code> properties like <code>display: none</code>. It completely removes and
+      recreates the elements in DOM.
+    </p>
+
+    <h3>Usasge:</h3>
+    <p><strong>data-bind: if</strong> is used as attribute:</p>
     <div class="code-block">
-      <!--//Use Prismjs - http://prismjs.com/index.html#basic-usage -->
-                    <pre><code class="language-markup">
-                      &ltp class="my-style"&gt
-                      Hello World!
-                      &lt/p&gt
-                    </code></pre>
+        <pre>
+          <code class="language-markup">
+            &lt;div data-bind="{if: property }"&gt;
+              &lt;textarea&gt;&lt;/textarea&gt;
+              &lt;p&gt;Hello World!&lt;/p&gt;
+            &lt;/div&gt;
+          </code>
+        </pre>
     </div>
-    <!--//code-block-->
+
+    <h3>Example:</h3>
+
+    <div class="code-block">
+        <pre>
+          <code class="language-html">
+            &lt;div data-controller="ExampleController"&gt;
+              &lt;input type="checkbox" data-bind="{model: property}"/&gt;
+
+              &lt;div data-bind="{if: property }"&gt;
+                &lt;textarea data-bind="{model: action}"&gt;&lt;/textarea&gt;
+                &lt;p&gt;Hello World!&lt;/p&gt;
+                &lt;p&gt;{{ action }}&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;script&gt;
+              sixth.controller('ExampleController', function(){
+                this.property = true;
+              });
+            &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+
+    <div class="panel panel-default clearfix">
+      <div class="col-md-12">
+        <form name="myForm">
+          <div class="col-md-6">
+            <label class="checkbox">
+              <input type="checkbox" data-bind="{model: info}"> Check me
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-md-12" data-bind="{if: info}">
+        <textarea data-bind="{model: clickAction}"></textarea>
+        <p>Hello World!</p>
+        <p>{{ clickAction }}</p>
+      </div>
+
+    </div>
   </div>
 </div>

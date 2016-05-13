@@ -33,8 +33,14 @@ sixth.service('config', function(){
     {
       name: 'data-bind:if',
       url: '/if',
-      controller: 'IfCtrl',
+      controller: 'ExampleCtrl',
       templateUrl: 'partials/docs/if.html'
+    },
+    {
+      name: 'data-bind:include',
+      url: '/include',
+      controller: 'IfCtrl',
+      templateUrl: 'partials/docs/include.html'
     },
     {
       name: 'data-bind:repeat',
