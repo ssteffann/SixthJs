@@ -39,13 +39,13 @@ sixth.service('config', function(){
     {
       name: 'data-bind:include',
       url: '/include',
-      controller: 'IfCtrl',
+      controller: 'ExampleCtrl',
       templateUrl: 'partials/docs/include.html'
     },
     {
       name: 'data-bind:repeat',
       url: '/repeat',
-      controller: 'RepeatCtrl',
+      controller: 'ExampleCtrl',
       templateUrl: 'partials/docs/repeat.html'
     },
     {

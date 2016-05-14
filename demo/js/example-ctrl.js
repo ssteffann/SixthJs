@@ -2,7 +2,8 @@ sixth.controller('ExampleCtrl', function() {
   this.user = {
     name: 'Borg',
     gender: 'male',
-    message: 'Placeholder'
+    message: 'Placeholder',
+    collection: [ { name: 'Customer1' }, { name: 'Customer2' }]
   };
 
 
@@ -11,6 +12,16 @@ sixth.controller('ExampleCtrl', function() {
 
   this.clickAction = 'Make some action!!';
 
+
+  this.addItem = function () {
+    let length = this.user.collection.length;
+
+    this.user.collection.push({name: `Customer_${length + 1}`})
+  };
+
+  this.delItem = function () {
+    this.user.collection.splice(-1, 1)
+  };
 
   this.myFunc = function(){
     this.clickAction = 'Yeeyy!!! you clicked me!!'

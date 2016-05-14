@@ -1,29 +1,82 @@
 <div class="docs-inner">
   <div class="block">
-    <h3 class="sub-title text-center">repeat</h3>
+    <h2 class="sub-title text-center">data-bind:repeat</h2>
 
-    <p><a href="http://prismjs.com/" target="_blank">PrismJS</a> is used as
-      the syntax highlighter here.</p>
+    <p>
+      Binding type: <code>repeat</code> build a template for each item from a collection. The template is the
+      HTML element that have attribute <code>data-bind:repeat</code>.To reduce the number of DOM renderings, templates for each
+      element are built in a document fragment ant then rendered all at once. When a new item is added, all collection is rebuilt.
+      Same effect has the deletion of an item from collection.
+    </p>
 
-    <p>Below are the details of the custom PrismJS build used in this
-      template. You can <a href="http://prismjs.com/download.html"
-                           target="_blank">build your own version</a> via
-      their website should you need to.</p>
-    <ul class="list-unstyled">
-      <li><strong>Compression level:</strong> Minified</li>
-      <li><strong>Theme:</strong> Okaidia</li>
-      <li><strong>Languages:</strong> Markup, CSS, C-like, JavaScript, PHP
-        and Python
-      </li>
-    </ul>
+    <p>
+      This binding type work only with <code>Array</code> data type, if specified property is not an array, framework will throw
+      an error.
+    </p>
+
+    <h3>Usage:</h3>
+    <p><strong>data-bind: repeat</strong> is used as attribute and requires an alias to be defined:</p>
     <div class="code-block">
-      <!--//Use Prismjs - http://prismjs.com/index.html#basic-usage -->
-                    <pre><code class="language-markup">
-                      &ltp class="my-style"&gt
-                      Hello World!
-                      &lt/p&gt
-                    </code></pre>
+        <pre>
+          <code class="language-markup">
+            &lt;ul&gt;
+              &lt;li data-bind="{repeat: collection, alias: item }"&gt;
+                {{ item }}
+              &lt;/li&gt;
+            &lt;/ul&gt;
+          </code>
+        </pre>
     </div>
-    <!--//code-block-->
+
+    <h3>Example:</h3>
+
+    <div class="code-block">
+        <pre>
+          <code class="language-html">
+            &lt;div data-controller="ExampleController"&gt;
+              &lt;button data-bind="{click: addItem}"/&gt;Add&lt;button&gt;
+              &lt;button data-bind="{click: delItem}"/&gt;Delete&lt;button&gt;
+
+              &lt;ul&gt;
+                &lt;li data-bind="{repeat: customers, alias: customer }"&gt;
+                    Name:{{ customer.name }}
+                &lt;/li&gt;
+              &lt;/ul&gt;
+            &lt;/div&gt;
+
+            &lt;script&gt;
+             sixth.controller('ExampleController', function(){
+                this.customers = [{ name: 'Customer1' }, { name: 'Customer2' }];
+             });
+            &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+
+
+      <div class="panel panel-default clearfix">
+          <div class="col-md-12">
+              <button type="button"
+                      class="btn btn-primary btn-lg btn-block"
+                      data-bind="{click: addItem }">Add Customer
+              </button>
+              <button type="button"
+                      class="btn btn-danger btn-lg btn-block"
+                      data-bind="{click: delItem }">Delete Customer
+              </button>
+          </div>
+
+
+          <div class="col-md-12">
+              <h3 class="text-center"> Customers: </h3>
+
+              <ul>
+                  <li data-bind="{repeat: user.collection, alias: customer}">
+                      Name: {{customer.name}}
+                  </li>
+              </ul>
+          </div>
+
+      </div>
   </div>
 </div>
