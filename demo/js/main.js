@@ -10,5 +10,11 @@ sixth.controller('MainCtrl', function () {
     let config = sixth.inject('config');
 
     this.routes = config.routes;
+    this.current = '';
+
+    sixth.router.onRouteChange((currentState) => {
+      this.current = currentState.name;
+    });
+
 
   });

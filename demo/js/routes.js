@@ -1,8 +1,8 @@
 {
   let config = sixth.inject('config');
-  sixth.route.config({ html5Mode: false });
+  sixth.router.config({ html5Mode: false });
 
-  sixth.route
+  sixth.router
     .register({
       url: '/example',
       templateUrl: 'partials/example.html',
@@ -20,8 +20,8 @@
     })
     .children('docsView');
 
-  config.routes.forEach((route) =>  sixth.route.register(route));
+  config.routes.forEach((route) =>  sixth.router.register(route));
 
-  sixth.route.check();
+  sixth.router.check();
 }
 

@@ -1,13 +1,19 @@
 sixth.controller('ExampleCtrl', function() {
+  let elem = [];
+
+  for(let i =0; i<1000;i++){
+    elem.push({name: `Customer_${i + 1}`})
+  }
+
   this.user = {
     name: 'Borg',
     gender: 'male',
     message: 'Placeholder',
-    collection: [ { name: 'Customer1' }, { name: 'Customer2' }]
+    collection: elem
   };
 
-
   this.danger = false;
+  this.test = 'bla bls';
   this.info = false;
 
   this.clickAction = 'Make some action!!';

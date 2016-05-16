@@ -22,6 +22,7 @@
   const PARAMETER_REGEXP = /([:*])(\w+)/g;
   const REPLACE_VARIABLE_REGEXP = '([^\/]*)';
   const INTERPOLATE = /\{\{([\s\S]+?)\}\}/g;
+  const OFFQUTES_REGEXP = /[.\w\d-]+(?=([^"']*["'][^"']*["'])*[^"']*$)/g;
   /** ***************************************************************** **/
 
   /**
@@ -57,6 +58,12 @@
         fn(elem[i], i);
       }
     },
+    evaluate: (expression) => {
+      let result  = expression.replace(OFFQUTES_REGEXP,'this.$&');
+
+      return new Function(`return ${result};`);
+
+    },
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined',
     getdomElemens: (domElement) => {
@@ -79,7 +86,7 @@
       try {
         let json = attrValue
           .replace(/\s+/g, '')
-          .replace(/[.\w\d\/>-]+/g, '"$&"');
+          .replace(/[.\w\d\/=\/<\/>\/!\/'-]+/g, '"$&"');
 
         return JSON.parse(json);
       } catch (err) {
@@ -204,22 +211,28 @@
         element.$class  = !element.$class ? new Map() : element.$class;
 
         for (let key in property) {
-          let value = property[key];
+          let fn = utils.evaluate(property[key])
+            , values = property[key].match(OFFQUTES_REGEXP)
+            , obj = { elem: element, fn: fn };
 
-          element.$class.set(value, key);
+          values.forEach((val) => {
+            element.$class.set(val, key);
 
-          (!stopRegister) && this.registerElement(element, value, 'class');
-          this.customBind(value);
+            (!stopRegister) && this.registerElement(obj, val, 'class');
+            this.customBind(val);
+          });
 
-          Binding_Types.class.render(element, this.scope.getFromPath(value), value);
+          Binding_Types.class.render.call(this, obj, '', values[0]);
         }
       },
-      render: function(element, value, property) {
-        let $class =  element.$class.get(property);
+      render: function(obj, value, property) {
+        let $class =  obj.elem.$class.get(property);
 
-        value
-          ? element.classList.add($class)
-          : element.classList.remove($class);
+        let result =  obj.fn.call(this.scope);
+
+        result
+          ? obj.elem.classList.add($class)
+          : obj.elem.classList.remove($class);
       }
     },
     if: {
@@ -343,6 +356,8 @@
   class Router {
     constructor(fn) {
       this.handler = fn;
+      this.changeEvent = null;
+      this.currentState = {};
       this.routes = [];
       this.parrent = '';
       this.view = '';
@@ -350,7 +365,19 @@
       this.html5Mode = false;
       this.default = {};
 
-      window.addEventListener('hashchange', () => this.check());
+      window.addEventListener('hashchange', () => {
+        this.check();
+
+        if(this.changeEvent){
+          this.changeEvent(this.currentState);
+        }
+      });
+    }
+
+    onRouteChange(callback){
+      if(typeof callback !== 'function') return;
+
+      this.changeEvent = callback
     }
 
     config(options = {}) {
@@ -360,7 +387,12 @@
         : DEFAULT_ROOT;
 
       if (this.html5Mode) {
-        window.addEventListener('popstate', () => this.check());
+        window.addEventListener('popstate', () => {
+          this.check();
+          if(this.changeEvent){
+            this.changeEvent(this.currentState);
+          }
+        });
 
         window.removeEventListener('hashchange', () => this.check())
       }
@@ -437,6 +469,9 @@
 
       return current;
     }
+    getCurrentState(){
+      return this.currentState;
+    }
 
     check(current = this.getCurrent()) {
       let routeParams = {}
@@ -454,7 +489,7 @@
           match.forEach(function(value, i) {
             routeParams[keys[i].replace(':', '')] = value;
           });
-
+          this.currentState = state;
           this.handler(state, routeParams);
           return this;
         }
@@ -923,7 +958,7 @@
   let tmplEngine = new TemplateEngine(self.$http, bootstrapper);
   let service = new Service();
 
-  self.route = new Router((state, params) => {
+  self.router = new Router((state, params) => {
     tmplEngine.getTemplate(state.templateUrl)
       .then((response) => {
         let element = document.querySelector(`[${DATA_VIEW}="${state.$view}"]`);
