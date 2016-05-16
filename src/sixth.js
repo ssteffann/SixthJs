@@ -38,7 +38,7 @@
         return;
       }
 
-      if (path.length == 1&&this.isDefined(value)) {
+      if (path.length == 1 && this.isDefined(value)) {
         return obj[path[0]] = value;
       }
 
@@ -48,7 +48,13 @@
 
       return this.objectPath(obj[path[0]], path.slice(1), value);
     },
+    toSingleString: (obj) => {
+      let str = ``;
 
+      Object.keys(obj).forEach((key) => {
+        str += ``
+      });
+    },
     forEachNode: (elem, fn) => {
       if (!elem || !fn) {
         return;
@@ -58,10 +64,19 @@
         fn(elem[i], i);
       }
     },
-    evaluate: (expression) => {
-      let result  = expression.replace(OFFQUTES_REGEXP,'this.$&');
+    evaluate: (expression, alias = '') => {
+      let result  = expression.replace(OFFQUTES_REGEXP, (word) => {
+        let prefix = 'this.'
+          , parent = word.substr(0, word.indexOf('.')) || false;
 
-      return new Function(`return ${result};`);
+        if(word === alias || parent === alias){
+          prefix = '';
+        }
+
+        return `${prefix}${word}`;
+      });
+
+      return new Function(alias, `return ${result};`);
 
     },
     isUndefined: (value) => typeof value === 'undefined',
@@ -72,17 +87,15 @@
         : []
     },
     copyObj: (object) => {
-      return Object.keys(object).reduce((accum, key)=> {
-        if (typeof object[key] === 'object') {
-          accum[key] = this.copyObj(object[key])
-        } else {
-          accum[key] = object[key]
-        }
-
-        return accum;
-      }, {})
+      return Object.assign({}, object);
     },
     parseAttrData: (attrValue) => {
+      try{
+        let json = JSON.parse(attrValue);
+
+        return json;
+      }catch(e){ }
+
       try {
         let json = attrValue
           .replace(/\s+/g, '')
@@ -207,28 +220,30 @@
       render: () => true
     },
     class: {
-      init: function(element, property, stopRegister) {
+      init: function(element, property, value ,alias) {
         element.$class  = !element.$class ? new Map() : element.$class;
-
         for (let key in property) {
-          let fn = utils.evaluate(property[key])
+          let fn = utils.evaluate(property[key], alias)
             , values = property[key].match(OFFQUTES_REGEXP)
             , obj = { elem: element, fn: fn };
 
           values.forEach((val) => {
             element.$class.set(val, key);
 
-            (!stopRegister) && this.registerElement(obj, val, 'class');
-            this.customBind(val);
+            (!value) && this.registerElement(obj, val, 'class');
+            (!value) && this.customBind(val);
           });
 
-          Binding_Types.class.render.call(this, obj, '', values[0]);
+          Binding_Types.class.render.call(this, obj, value , values[0]);
         }
       },
       render: function(obj, value, property) {
-        let $class =  obj.elem.$class.get(property);
+        let $class =  obj.elem.$class.get(property)
+        , result;
 
-        let result =  obj.fn.call(this.scope);
+        try {
+          result = obj.fn.call(this.scope, value);
+        } catch (e) {}
 
         result
           ? obj.elem.classList.add($class)
@@ -306,6 +321,7 @@
         parent.removeChild(element);
       },
       render: function(element, value) {
+        //TODO: Refactor this because this solution sucks...
         let parent = element.helpers.start.parentNode
           , alias = element.$bindingTypes.alias
           , newElement = document.createDocumentFragment()
@@ -320,9 +336,11 @@
           let clone = element.cloneNode(true)
             , children = utils.getdomElemens(clone);
 
-          children = children.length ? children : [clone];
+          this.bindElements([clone], item, alias);
 
-          this.bindElements(children, item, alias);
+          if(children.length){
+            this.bindElements(children, item, alias);
+          }
 
           newElement.appendChild(clone);
         });
@@ -336,9 +354,9 @@
           .then((response) => {
             tmplEngine.registerTemplate(this.ctrlName, element, response, true)
           })
-          .catch((error) => {
+/*          .catch((error) => {
             throw new Error(error);
-          });
+          });*/
       },
       render: () => true
     }
@@ -374,7 +392,7 @@
       });
     }
 
-    onRouteChange(callback){
+    onRouteChanged(callback){
       if(typeof callback !== 'function') return;
 
       this.changeEvent = callback
@@ -620,9 +638,7 @@
 
       try {
         return new Function(arg,str);
-      } catch (e) {
-        console.warn("Could not create a template function: " + str)
-      }
+      } catch (e) {console.warn("Could not create a template function: " + str)      }
     }
   }
 
@@ -736,12 +752,11 @@
 
       if (!elem) {
         ctrl.clear();
+        console.log('binded ctrl', ctrl)
         ctrl.bindModel();
       }
 
       ctrl.bindElements(elements);
-
-      console.log('binded ctrl', ctrl)
     }
 
     clearElements() {
@@ -873,19 +888,18 @@
      * @returns {*}
      */
     bindElements(elements, item, alias) {
-      let init = (element, property, type, item = null) => {
+      let init = (element, property, type, item) => {
         let value = item || this.scope.getFromPath(property);
 
         if (!EXCLUDED_TYPES[type] && utils.isUndefined(value)) return false;
-
-        Binding_Types[type].init.call(this, element, property, item);
+        Binding_Types[type].init.call(this, element, property, value, alias);
 
         !EXCLUDED_TYPES[type] && Binding_Types[type].render.call(this, element, value);
 
         return true;
       };
 
-      let matchText = (elem, type, text, item = null, alias = null, name = null) => {
+      let matchText = (elem, type, text, item, alias, name) => {
         let match = INTERPOLATE.exec(text)
           , prop
           , obj;
@@ -911,7 +925,6 @@
 
         if (element.hasAttributes()) {
           utils.forEachNode(element.attributes, (attr) => {
-
             matchText(element, 'attr', attr.value, item, alias, attr.name);
           });
         }
@@ -932,7 +945,7 @@
             return new logError('Invalid binding type in: ' + type)
           }
 
-          init(element, data[type], type)
+          init(element, data[type], type, item)
         });
       });
     }
