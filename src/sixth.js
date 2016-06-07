@@ -14,7 +14,7 @@
   };
 
   const EXCLUDED_TYPES = { class: true, include: true };
-  const RENDER_TYPES = ['class', 'model', 'attr', 'text', 'if'];
+  const RENDER_TYPES = ['class', 'model', 'attr', 'text', 'repeat', 'if'];
 
   const SPACE_REG = /\s/g;
   const DEFAULT_ROOT = '/';
@@ -111,7 +111,7 @@
 
   let Binding_Types = {
     model: {
-      init: function(element, property, stopRegister) {
+      init: function(element, property) {
         let setValue
           , eventsTypes
           , event;
@@ -120,7 +120,7 @@
           return new logError(`SixthJs: Bind type model can't be applied on this element`);
         }
 
-        (!stopRegister) && this.registerElement(element, property, 'model');
+        this.registerElement(element, property, 'model');
         this.customBind(property);
 
         setValue = (event) => {
@@ -164,8 +164,8 @@
       }
     },
     text: {
-      init: function(element, property, stopRegister) {
-        (!stopRegister) && this.registerElement(element, property, 'text');
+      init: function(element, property) {
+        this.registerElement(element, property, 'text');
         this.customBind(property);
 
       },
@@ -831,7 +831,6 @@
       proxy = new Proxy(obj, {
         set: (model, prop, value) => {
           let oldValue = model[prop];
-
           if (oldValue === value) return false;
 
           model[prop] = value;

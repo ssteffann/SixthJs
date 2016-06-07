@@ -10,8 +10,8 @@
     })
     .register({
       url: '/scores',
-      templateUrl: 'partials/scores.html',
-      controller: 'DocsCtrl'
+      templateUrl: 'partials/testing/scores.html',
+      controller: 'testingController'
     })
     .register({
       url: '/docs',
