@@ -15,4 +15,20 @@ sixth.controller('MainCtrl', function () {
     sixth.router.onRouteChanged((currentState) => {
       this.current = currentState.name;
     });
+  })
+  .controller('ToDoCtrl', function() {
+    this.list = [{ name: 'Test the application' }, { name: 'Run' }];
+    this.newTodo = '';
+
+    this.done = function(item){
+
+    };
+    this.addItem = function() {
+      if(!this.newTodo) return;
+
+      this.list.push({name: this.newTodo});
+
+      this.newTodo = '';
+    };
+
   });

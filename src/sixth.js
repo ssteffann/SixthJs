@@ -77,7 +77,6 @@
       });
 
       return new Function(alias, `return ${result};`);
-
     },
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined',
@@ -109,7 +108,7 @@
     }
   };
 
-  let Binding_Types = {
+  const Binding_Types = {
     model: {
       init: function(element, property) {
         let setValue
@@ -174,8 +173,8 @@
       }
     },
     attr: {
-      init: function(element, property, stopRegister) {
-        (!stopRegister) && this.registerElement(element, property, 'attr');
+      init: function(element, property) {
+        this.registerElement(element, property, 'attr');
         this.customBind(property);
 
       },

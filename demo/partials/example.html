@@ -1,0 +1,33 @@
+<h1 class="text-align">Todo</h1>
+
+
+<div class="list-group">
+  <div class="list-group-item active">
+    Todo list:
+  </div>
+
+  <div data-bind="{repeat:list, alias: todo}" class="list-group-item clearfix">
+    <div class="col-md-6">
+      <span data-bind="{class:{}}">{{ todo.name }}</span>
+    </div>
+    <div class="col-md-6">
+      <button class="btn btn-success pull-right"
+              type="button"
+              data-bind="{click: done(todo)}">Done</button>
+    </div>
+  </div>
+
+  <div class="list-group-item clearfix">
+    <div class="col-md-6">
+      <input type="text"
+             class="form-control"
+             data-bind="{model: newTodo}"
+             placeholder="To do ...">
+    </div>
+    <div class="col-md-6">
+      <button class="btn btn-primary pull-right"
+              type="button"
+              data-bind="{click: addItem}">Add+</button>
+    </div>
+  </div>
+</div>
