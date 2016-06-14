@@ -45,7 +45,6 @@ function _knockout() {
       document.getElementById("run-knockout").innerHTML = (new Date() - date) + " ms";
     }
   }, document.getElementById("knockout"));
-
 }
 
 function _angular(data) {
