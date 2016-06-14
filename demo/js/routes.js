@@ -4,14 +4,14 @@
 
   sixth.router
     .register({
-      url: '/docs',
-      templateUrl: 'partials/docs.html',
-      controller: 'DocsCtrl'
-    })
-    .register({
       url: '/example',
       templateUrl: 'partials/example.html',
       controller: 'ToDoCtrl'
+    })
+    .register({
+      url: '/docs',
+      templateUrl: 'partials/docs.html',
+      controller: 'DocsCtrl'
     })
     .children('docsView');
 

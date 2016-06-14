@@ -128,14 +128,14 @@
         };
 
         eventsTypes = {
-          'checkbox': () => ({
+          checkbox: () => ({
             name: 'change',
             fn: (event) => {
               element.isTouched = true;
               this.scope.setToPath(property, event.target.checked);
             }
           }),
-          'radio': () => ({
+          radio: () => ({
             name: 'change',
             fn: setValue
           })
@@ -957,12 +957,12 @@
   let $http = new Http();
 
   self.$http = {
-    'get': $http.init('GET'),
-    'post': $http.init('POST'),
-    'put': $http.init('PUT'),
-    'delete': $http.init('DELETE'),
-    'options': $http.init('OPTIONS'),
-    'head': $http.init('HEAD')
+    get: $http.init('GET'),
+    post: $http.init('POST'),
+    put: $http.init('PUT'),
+    delete: $http.init('DELETE'),
+    options: $http.init('OPTIONS'),
+    head: $http.init('HEAD')
   };
 
   let bootstrapper = new Bootstrapper(utils);
