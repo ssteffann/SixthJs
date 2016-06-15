@@ -54,4 +54,23 @@ sixth.controller('MainCtrl', function () {
       this.stacked.first = Math.floor(Math.random() * 30 + 1);
       this.stacked.second = Math.floor(Math.random() * 30 + 1);
     };
+
+    this.list = [{ name: 'Spiderman ' }, { name: 'Iron Man' }];
+    this.newCustomer = '';
+    this.total = this.list.length;
+
+    this.delItem = function () {
+      this.list.splice(-1, 1);
+      this.total = this.list.length;
+    };
+    
+    this.addItem = function() {
+      if(!this.newCustomer) return;
+
+      this.list.push({name: this.newCustomer});
+      this.total = this.list.length;
+
+      this.newCustomer = '';
+    };
+
   });
