@@ -6,7 +6,7 @@
     .register({
       url: '/example',
       templateUrl: 'partials/example.html',
-      controller: 'ToDoCtrl'
+      controller: 'ExCtrl'
     })
     .register({
       url: '/docs',

@@ -353,9 +353,6 @@
           .then((response) => {
             tmplEngine.registerTemplate(this.ctrlName, element, response, true)
           })
-/*          .catch((error) => {
-            throw new Error(error);
-          });*/
       },
       render: () => true
     }
