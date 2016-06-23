@@ -1,21 +1,18 @@
-(function(window, document) {
+{
   /**
-   * Constants
+   * @ngdoc Constants
    * @type {string}
    */
   const TEXT_NODE = 3;
   const BIND_ATTR = 'data-bind';
   const DATA_VIEW = 'data-view';
   const CTRL_ATTR = 'data-controller';
-
   const REPEAT = {
     START: 'data-repeat-start',
     STOP: 'data-repeat-stop'
   };
-
   const EXCLUDED_TYPES = { class: true, include: true };
   const RENDER_TYPES = ['class', 'model', 'attr', 'text', 'repeat', 'if'];
-
   const SPACE_REG = /\s/g;
   const DEFAULT_ROOT = '/';
   const HASH_REGEXP =/#(.*)$/;
@@ -26,9 +23,13 @@
   /** ***************************************************************** **/
 
   /**
-   * Utils
+   * @ngdoc Service
+   * @name utils
+   *
+   * @description
+   *  Utils methods used in all framework
    */
-  let utils = {
+  const utils = {
     objectPath: function(obj, path, value) {
       if (typeof path == 'string') {
         return this.objectPath(obj, path.split('.'), value);
@@ -365,7 +366,12 @@
   }
 
   /**
-   * Routing service
+   * @ngdoc Service
+   * @name Router
+   *
+   * @description
+   *  Register and handle routes.
+   *  It works with simple and nested routes (parent-child)
    */
   class Router {
     constructor(fn) {
@@ -561,7 +567,11 @@
   }
 
   /**
-   * Template Engine
+   * @ngdoc Service
+   * @name TemplateEngine
+   *
+   * @description
+   *  Parse templates and interpolates binded values
    */
   class TemplateEngine {
     constructor(http, bootstrapper) {
@@ -574,7 +584,7 @@
     }
 
     escapeHtml(html = '') {
-      let entityMap = {
+      const entityMap = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
@@ -595,8 +605,8 @@
     }
 
     registerTemplate(ctrlName, parrent, html, include) {
-      let div = document.createElement('div')
-        , fragment = document.createDocumentFragment();
+      let div = document.createElement('div');
+      let fragment = document.createDocumentFragment();
 
       div.innerHTML = html;
       parrent.innerHTML = '';
@@ -611,8 +621,8 @@
     }
 
     compile(tmpl = '', arg = '') {
-      let str = tmpl
-        , preComp;
+      let str = tmpl;
+      let preComp;
 
       preComp = str
         .replace(/(^|\r|\n)\t* +| +\t*(\r|\n|$)/g, ' ')
@@ -634,12 +644,18 @@
 
       try {
         return new Function(arg,str);
-      } catch (e) {console.warn("Could not create a template function: " + str)      }
+      } catch (e) {console.warn("Could not create a template function: " + str)}
     }
   }
 
   /**
-   * Http Service
+   * @ngdoc Service
+   * @name Http
+   *
+   * @description
+   *  Service that expose standard HTTP request methods:
+   *  get, put, post, delete, patch, header
+   *  and use promises instead of callbacks
    */
   class Http {
     constructor(){
@@ -648,9 +664,9 @@
 
     init(method) {
       return (options) => new Promise((resolve, reject) => {
-        let request = new XMLHttpRequest()
-          , that = this
-          , {url, params, headers, cache} = options;
+        const request = new XMLHttpRequest();
+        const that = this;
+        let {url, params, headers, cache} = options;
 
         if (cache && that.cachedData.has(url)) return resolve(this.cachedData.get(url));
 
@@ -692,7 +708,11 @@
   }
 
   /**
-   * Bootstrapper
+   * @ngdoc Service
+   * @name Bootstrapper
+   *
+   * @description
+   *  Init the framework, bind templates and dom elements to controllers
    */
   class Bootstrapper {
     constructor(utils) {
@@ -748,7 +768,6 @@
 
       if (!elem) {
         ctrl.clear();
-        console.log('binded ctrl', ctrl)
         ctrl.bindModel();
       }
 
@@ -761,7 +780,11 @@
   }
 
   /**
-   * Scope
+   * @ngdoc Service
+   * @name Scope
+   *
+   * @description
+   *  Is used to work with scope/context of the controller
    */
   class Scope {
     setToPath(path, value) {
@@ -774,9 +797,12 @@
   }
 
   /**
-   * Service
+   * @ngdoc Service
+   * @name Service
+   *
+   * @description
+   *  Register and hold a service method defined by developer
    */
-
   class Service {
     constructor(){
       this.services = new Map();
@@ -792,7 +818,11 @@
   }
 
   /**
-   * Controller class that bind model and view
+   * @ngdoc Service
+   * @name Controller
+   *
+   * @description
+   *  Handle business logic and bind the model to the view
    */
   class Controller {
     constructor(name, callback) {
@@ -879,8 +909,11 @@
     };
 
     /**
-     * Sort each element with data-model attribut to it model in scope
-     * @returns {*}
+     * @ngdoc Controller
+     * @name Controller:bindElements
+     *
+     * @description
+     *  Sort each element with data-model attribut to it model in scope
      */
     bindElements(elements, item, alias) {
       let init = (element, property, type, item) => {
@@ -947,11 +980,11 @@
   }
 
   /** ***************************************************************** **/
-  let self = {};
+  const self = {};
 
   window.sixth = self;
 
-  let $http = new Http();
+  const $http = new Http();
 
   self.$http = {
     get: $http.init('GET'),
@@ -962,9 +995,9 @@
     head: $http.init('HEAD')
   };
 
-  let bootstrapper = new Bootstrapper(utils);
-  let tmplEngine = new TemplateEngine(self.$http, bootstrapper);
-  let service = new Service();
+  const bootstrapper = new Bootstrapper(utils);
+  const tmplEngine = new TemplateEngine(self.$http, bootstrapper);
+  const service = new Service();
 
   self.router = new Router((state, params) => {
     tmplEngine.getTemplate(state.templateUrl)
@@ -996,6 +1029,4 @@
   self.inject = function(name) {
     return service.get(name);
   };
-
-
-})(window, document);
+}

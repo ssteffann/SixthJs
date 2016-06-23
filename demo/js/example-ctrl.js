@@ -1,8 +1,8 @@
 sixth.controller('ExampleCtrl', function() {
   let elem = [];
 
-  for(let i =0; i<2;i++){
-    elem.push({name: `Customer_${i + 1}`})
+  for (let i = 0; i < 2; i++) {
+    elem.push({ name: `Customer_${i + 1}` })
   }
 
   this.user = {
@@ -38,7 +38,7 @@ sixth.controller('ExampleCtrl', function() {
   };
 
   this.inputChange = function(){
-    this.clickAction = 'The imput was changed!';
+    this.clickAction = 'The input was changed!';
   };
 
   this.selectChange = function(){
