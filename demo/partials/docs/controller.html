@@ -1,0 +1,51 @@
+<div class="docs-inner">
+  <div class="block">
+    <h2 class="sub-title text-center">data-controller</h2>
+
+    <p>
+      <code>data-controller</code> require a controller name. This is the way how <code>SixthJs</code> supports Model-View-View-Model
+      design pattern. This attribute specify the DOM element that will be bound to certain controller.
+      Controller can be specified through attribute <code>data-controller</code> or in <code>route</code>
+      service, when a route is registered. It is recommended to use one way or another, usage of both ways,
+      in the DOM and in route service will initiate twice the controller.
+    </p>
+
+    <p>
+      <strong>MVVM components in SixthJs:</strong>
+    <ul>
+      <li>
+        Model - Models are the properties specified with <code>this</code> in controller.
+        This properties are specified in the DOM, and used through bindings.
+      </li>
+
+      <li>
+        View - The HTML that is rendered into the View
+      </li>
+
+      <li>View - The HTML elements that changes the model (<code>input, select, textarea</code>)</li>
+
+      <li>
+        Model - Properties attached and updated from the View
+      </li>
+    </ul>
+    </p>
+
+    <h3>Usage:</h3>
+
+    <p><strong>data-controller</strong> is used as attribute:</p>
+
+    <div class="code-block">
+        <pre>
+          <code class="language-markup">
+            &lt;div data-controller="MyController"&gt;&lt;/div&gt;
+
+            &lt;script&gt;
+              sixth.controller('MyController', function(){
+                this.user = 'Borg';
+              });
+            &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+  </div>
+</div>

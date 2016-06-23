@@ -1,0 +1,79 @@
+<div class="docs-inner">
+    <div class="block">
+        <h2 class="sub-title text-center">data-bind:change</h2>
+
+        <p>
+            Binding type: <code>change</code> trigger given function when user changes the input.
+            The event is triggered at the end of the change. Will throw an error if given expression is
+            not a function. Also will not trigger if attached model is changed programmatically and not
+            from input.
+        </p>
+
+        <h3>Usage:</h3>
+        <p><strong>data-bind: change</strong> is used as attribute:</p>
+        <div class="code-block">
+        <pre>
+          <code class="language-markup">
+              &lt;input type="text" data-bind="{change: myFunction}"/&gt;
+
+              &lt;select data-bind="{change: myFunction}"&gt;&lt;/select&gt;
+
+              &lt;textarea data-bind="{change: myFunction}"&gt;&lt;/textarea&gt;
+          </code>
+        </pre>
+        </div>
+
+        <h3>Example:</h3>
+
+        <div class="code-block">
+        <pre>
+          <code class="language-html">
+              &lt;div data-controller="ExampleController" &gt;
+               &lt;input type="text" data-bind="{change: myFunction}"/&gt;
+              &lt;/div&gt;
+
+              &lt;script&gt;
+                sixth.controller('ExampleController', function(){
+                 this.counter = 1;
+
+                 this.myFunction = function(){
+                  this.counter += 1;
+                 };
+                });
+             &lt;/script&gt;
+          </code>
+        </pre>
+        </div>
+
+
+        <div class="panel panel-default clearfix">
+            <div class="col-md-12">
+                <form name="myForm">
+                    <div class="form-group col-md-6">
+                        <label for="name">Input: </label>
+                        <input type="text"
+                               id="name"
+                               class="form-control"
+                               data-bind="{change: inputChange}">
+
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label for="name">Select:</label>
+
+                        <select class="form-control"
+                                data-bind="{change: selectChange}">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="col-md-12">
+                <h3 class="text-center"> {{ clickAction }} </h3>
+            </div>
+        </div>
+    </div>
+</div>

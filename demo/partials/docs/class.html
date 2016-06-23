@@ -1,0 +1,80 @@
+<div class="docs-inner">
+  <div class="block">
+    <h2 class="sub-title text-center">data-bind:class</h2>
+
+    <p>
+      Binding type: <code>class</code> help developer to dynamically set <code>CSS</code>
+      class on an HTML element. Attribute receive an object where is specified the class
+      and the property from scope. Class is added once evaluated the property is true.
+    </p>
+
+    <p>
+      Binding type: <code>class</code> won't
+      add duplicate classes if the class is allready set. This type also don't have
+      any limitation related to element type, and can be used with any of it.
+    </p>
+
+    <h3>Usasge:</h3>
+    <p><strong>data-bind: class</strong> is used as attribute:</p>
+    <div class="code-block">
+      <pre>
+      <code class="language-markup">
+        &lt;div data-bind="{class: { className: property }}"&gt;
+          &lt;p class="red" data-bind="{class: { className: property }}"&gt;
+            Some Text!
+          &lt;/p"&gt;
+        &lt;/div&gt;
+      </code>
+      </pre>
+    </div>
+
+    <h3>Example:</h3>
+
+    <div class="code-block">
+        <pre>
+          <code class="language-html">
+          &lt;div data-controller="ExampleController" &gt;
+            &lt;input type="checkbox" data-bind="{model: property}"/&gt;
+
+            &lt;p data-bind={class={ text-danger: property }}&gt;&lt;/p&gt;
+          &lt;/div&gt;
+
+          &lt;script&gt;
+            sixth.controller('ExampleController', function(){
+              this.property = false;
+            });
+          &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+
+
+    <div class="panel panel-default clearfix">
+      <div class="col-md-12">
+        <form name="myForm">
+          <div class="col-md-6">
+            <label class="checkbox">
+              <input type="checkbox" data-bind="{model: info}"> Info Alert
+            </label>
+          </div>
+
+          <div class="col-md-6">
+            <label class="checkbox">
+              <input type="checkbox" data-bind="{model: danger}"> Danger Alert
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-md-12">
+        <div class="alert aler"
+             role="alert"
+            data-bind="{class:{ alert-danger: danger,
+                                alert-info: info }}">
+          <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+          Check something, to see some action!
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

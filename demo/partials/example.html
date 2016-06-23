@@ -1,0 +1,103 @@
+<div class="row">
+  <div class="col-md-6">
+    <h3>Progressbar</h3>
+
+    <div class="panel panel-info">
+      <div class="panel-heading clearfix">
+          <strong>Dynamic: </strong>
+          <button class="btn btn-info pull-right"
+                  data-bind="{click: random}">Randomize</button>
+      </div>
+      <div class="panel-body">
+
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped active"
+               role="progressbar"
+               aria-valuenow="{{ bar.first }}"
+               aria-valuemin="0"
+               aria-valuemax="200" style="width: {{ bar.first }}%">
+            <span>{{ bar.first }}%</span>
+          </div>
+        </div>
+
+        <div class="progress">
+          <div class="progress-bar progress-bar-warning"
+               role="progressbar" aria-valuenow="{{ bar.second }}"
+               aria-valuemin="0" aria-valuemax="100"
+               style="width: {{ bar.second }}%">
+            <span>{{ bar.second }}% Complete (warning)</span>
+          </div>
+        </div>
+
+        <div class="progress">
+          <div class="progress-bar progress-bar-{{type}}"
+               role="progressbar"
+               aria-valuenow="{{ bar.third }}"
+               aria-valuemin="0"
+               aria-valuemax="100" style="width: {{ bar.third }}%">
+            <span>{{ bar.third }}% Complete ({{type}})</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-info">
+      <div class="panel-heading clearfix">
+        <strong>Stacked: </strong>
+        <button class="btn btn-info pull-right"
+                data-bind="{click: randomStacked}">Randomize</button>
+      </div>
+      <div class="panel-body">
+        <div class="progress">
+          <div class="progress-bar progress-bar-success" style="width: {{ stacked.first }}%">
+            <span>{{ stacked.first }}% Complete (success)</span>
+          </div>
+          <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: {{ stacked.second }}%">
+            <span>{{ stacked.second }}% Complete (warning)</span>
+          </div>
+          <div class="progress-bar progress-bar-danger" style="width: {{ stacked.third }}%">
+            <span>{{ stacked.third }}% Complete (danger)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-md-6">
+    <h3>List of customers</h3>
+
+    <div class="panel panel-info">
+      <div class="panel-heading clearfix">
+        <strong>List: {{ list.length }} customers </strong>
+        <button class="btn btn-danger pull-right"
+                data-bind="{click: delItem}">Delete</button>
+      </div>
+      <div class="panel-body">
+
+        <div class="list-group">
+          <div data-bind="{repeat:list, alias: customer}" class="list-group-item clearfix">
+            <div class="col-md-6">
+              <span>{{ customer.name }}</span>
+            </div>
+          </div>
+
+          <div class="list-group-item clearfix">
+            <div class="col-md-6">
+              <input type="text"
+                     class="form-control"
+                     data-bind="{model: newCustomer}"
+                     placeholder="Customer name ..">
+            </div>
+            <div class="col-md-6">
+              <button class="btn btn-primary pull-right"
+                      type="button"
+                      data-bind="{click: addItem}">Add+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

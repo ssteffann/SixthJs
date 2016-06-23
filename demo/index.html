@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>SixthJs</title>
+  <link
+      href='http://fonts.googleapis.com/css?family=Lato:300,400,300italic,400italic'
+      rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Montserrat:400,700'
+        rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.css">
+
+  <!-- Theme CSS -->
+  <link id="theme-style" rel="stylesheet" href="css/styles.css">
+</head>
+
+<body data-spy="scroll" data-controller="MainCtrl">
+
+<!-- ******HEADER****** -->
+<header id="header"
+        class="header clearfix"
+        data-bind="{include: partials/header.html}"></header>
+<!--//header-->
+<div class="container offset-header"
+     data-view="">
+</div>
+
+<script src="../src/sixth.js"></script>
+<script src="js/config-service.js"></script>
+<script src="js/routes.js"></script>
+<script src="js/main.js"></script>
+<script src="js/example-ctrl.js"></script>
+</body>
+</html> 
+

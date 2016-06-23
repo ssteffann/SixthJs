@@ -1,33 +1,35 @@
-(function(window, document) {
+{
   /**
-   * Constants
+   * @ngdoc Constants
    * @type {string}
    */
   const TEXT_NODE = 3;
   const BIND_ATTR = 'data-bind';
   const DATA_VIEW = 'data-view';
   const CTRL_ATTR = 'data-controller';
-
   const REPEAT = {
     START: 'data-repeat-start',
     STOP: 'data-repeat-stop'
   };
-
   const EXCLUDED_TYPES = { class: true, include: true };
-  const RENDER_TYPES = ['class', 'model', 'attr', 'text', 'if'];
-
+  const RENDER_TYPES = ['class', 'model', 'attr', 'text', 'repeat', 'if'];
   const SPACE_REG = /\s/g;
   const DEFAULT_ROOT = '/';
   const HASH_REGEXP =/#(.*)$/;
   const PARAMETER_REGEXP = /([:*])(\w+)/g;
   const REPLACE_VARIABLE_REGEXP = '([^\/]*)';
   const INTERPOLATE = /\{\{([\s\S]+?)\}\}/g;
+  const OFFQUTES_REGEXP = /[.\w\d-]+(?=([^"']*["'][^"']*["'])*[^"']*$)/g;
   /** ***************************************************************** **/
 
   /**
-   * Utils
+   * @ngdoc Service
+   * @name utils
+   *
+   * @description
+   *  Utils methods used in all framework
    */
-  let utils = {
+  const utils = {
     objectPath: function(obj, path, value) {
       if (typeof path == 'string') {
         return this.objectPath(obj, path.split('.'), value);
@@ -37,7 +39,7 @@
         return;
       }
 
-      if (path.length == 1&&this.isDefined(value)) {
+      if (path.length == 1 && this.isDefined(value)) {
         return obj[path[0]] = value;
       }
 
@@ -47,15 +49,35 @@
 
       return this.objectPath(obj[path[0]], path.slice(1), value);
     },
+    toSingleString: (obj) => {
+      let str = ``;
 
+      Object.keys(obj).forEach((key) => {
+        str += ``
+      });
+    },
     forEachNode: (elem, fn) => {
-      if (!elem|| !fn) {
+      if (!elem || !fn) {
         return;
       }
 
       for (let i = 0, lgth = elem.length; i < lgth; i++) {
         fn(elem[i], i);
       }
+    },
+    evaluate: (expression, alias = '') => {
+      let result  = expression.replace(OFFQUTES_REGEXP, (word) => {
+        let prefix = 'this.'
+          , parent = word.substr(0, word.indexOf('.')) || false;
+
+        if(word === alias || parent === alias){
+          prefix = '';
+        }
+
+        return `${prefix}${word}`;
+      });
+
+      return new Function(alias, `return ${result};`);
     },
     isUndefined: (value) => typeof value === 'undefined',
     isDefined: (value) => typeof value !== 'undefined',
@@ -65,21 +87,19 @@
         : []
     },
     copyObj: (object) => {
-      return Object.keys(object).reduce((accum, key)=> {
-        if (typeof object[key] === 'object') {
-          accum[key] = this.copyObj(object[key])
-        } else {
-          accum[key] = object[key]
-        }
-
-        return accum;
-      }, {})
+      return Object.assign({}, object);
     },
     parseAttrData: (attrValue) => {
+      try{
+        let json = JSON.parse(attrValue);
+
+        return json;
+      }catch(e){ }
+
       try {
         let json = attrValue
           .replace(/\s+/g, '')
-          .replace(/[.\w\d\/>-]+/g, '"$&"');
+          .replace(/[.\w\d\/=\/<\/>\/!\/'-]+/g, '"$&"');
 
         return JSON.parse(json);
       } catch (err) {
@@ -89,9 +109,9 @@
     }
   };
 
-  let Binding_Types = {
+  const Binding_Types = {
     model: {
-      init: function(element, property, stopRegister) {
+      init: function(element, property) {
         let setValue
           , eventsTypes
           , event;
@@ -100,7 +120,7 @@
           return new logError(`SixthJs: Bind type model can't be applied on this element`);
         }
 
-        (!stopRegister) && this.registerElement(element, property, 'model')
+        this.registerElement(element, property, 'model');
         this.customBind(property);
 
         setValue = (event) => {
@@ -109,14 +129,14 @@
         };
 
         eventsTypes = {
-          'checkbox': () => ({
+          checkbox: () => ({
             name: 'change',
             fn: (event) => {
               element.isTouched = true;
               this.scope.setToPath(property, event.target.checked);
             }
           }),
-          'radio': () => ({
+          radio: () => ({
             name: 'change',
             fn: setValue
           })
@@ -144,8 +164,9 @@
       }
     },
     text: {
-      init: function(element, property, stopRegister) {
-        (!stopRegister) && this.registerElement(element, property, 'text');
+      init: function(element, property) {
+        this.registerElement(element, property, 'text');
+        this.customBind(property);
 
       },
       render: function(obj, value) {
@@ -153,11 +174,13 @@
       }
     },
     attr: {
-      init: function(element, property, stopRegister) {
-        (!stopRegister) && this.registerElement(element, property, 'attr');
+      init: function(element, property) {
+        this.registerElement(element, property, 'attr');
+        this.customBind(property);
+
       },
-      render: function(obj) {
-        obj.elem.setAttribute(obj.name, obj.fn.call(this.scope))
+      render: function(obj, value) {
+        obj.elem.setAttribute(obj.name, obj.fn.call(this.scope, value))
       }
     },
     click: {
@@ -197,26 +220,34 @@
       render: () => true
     },
     class: {
-      init: function(element, property, stopRegister) {
+      init: function(element, property, value ,alias) {
         element.$class  = !element.$class ? new Map() : element.$class;
-
         for (let key in property) {
-          let value = property[key];
+          let fn = utils.evaluate(property[key], alias)
+            , values = property[key].match(OFFQUTES_REGEXP)
+            , obj = { elem: element, fn: fn };
 
-          element.$class.set(value, key);
+          values.forEach((val) => {
+            element.$class.set(val, key);
 
-          (!stopRegister) && this.registerElement(element, value, 'class');
-          this.customBind(value);
+            (!value) && this.registerElement(obj, val, 'class');
+            (!value) && this.customBind(val);
+          });
 
-          Binding_Types.class.render(element, this.scope.getFromPath(value), value);
+          Binding_Types.class.render.call(this, obj, value , values[0]);
         }
       },
-      render: function(element, value, property) {
-        let $class =  element.$class.get(property);
+      render: function(obj, value, property) {
+        let $class =  obj.elem.$class.get(property)
+        , result;
 
-        value
-          ? element.classList.add($class)
-          : element.classList.remove($class);
+        try {
+          result = obj.fn.call(this.scope, value);
+        } catch (e) {}
+
+        result
+          ? obj.elem.classList.add($class)
+          : obj.elem.classList.remove($class);
       }
     },
     if: {
@@ -290,6 +321,7 @@
         parent.removeChild(element);
       },
       render: function(element, value) {
+        //TODO: Refactor this because this solution sucks...
         let parent = element.helpers.start.parentNode
           , alias = element.$bindingTypes.alias
           , newElement = document.createDocumentFragment()
@@ -304,9 +336,11 @@
           let clone = element.cloneNode(true)
             , children = utils.getdomElemens(clone);
 
-          children = children.length ? children : [clone];
+          this.bindElements([clone], item, alias);
 
-          this.bindElements(children, item, alias);
+          if(children.length){
+            this.bindElements(children, item, alias);
+          }
 
           newElement.appendChild(clone);
         });
@@ -320,9 +354,6 @@
           .then((response) => {
             tmplEngine.registerTemplate(this.ctrlName, element, response, true)
           })
-          .catch((error) => {
-            throw new Error(error);
-          });
       },
       render: () => true
     }
@@ -335,17 +366,38 @@
   }
 
   /**
-   * Routing service
+   * @ngdoc Service
+   * @name Router
+   *
+   * @description
+   *  Register and handle routes.
+   *  It works with simple and nested routes (parent-child)
    */
   class Router {
     constructor(fn) {
       this.handler = fn;
+      this.changeEvent = null;
+      this.currentState = {};
       this.routes = [];
+      this.parrent = '';
+      this.view = '';
       this.root = DEFAULT_ROOT;
       this.html5Mode = false;
       this.default = {};
 
-      window.addEventListener('hashchange', () => this.check());
+      window.addEventListener('hashchange', () => {
+        this.check();
+
+        if(this.changeEvent){
+          this.changeEvent(this.currentState);
+        }
+      });
+    }
+
+    onRouteChanged(callback){
+      if(typeof callback !== 'function') return;
+
+      this.changeEvent = callback
     }
 
     config(options = {}) {
@@ -355,9 +407,14 @@
         : DEFAULT_ROOT;
 
       if (this.html5Mode) {
-        window.addEventListener('popstate', this.check);
+        window.addEventListener('popstate', () => {
+          this.check();
+          if(this.changeEvent){
+            this.changeEvent(this.currentState);
+          }
+        });
 
-        window.removeEventListener('hashchange', this.check)
+        window.removeEventListener('hashchange', () => this.check())
       }
 
       return this;
@@ -367,6 +424,52 @@
       return path.toString()
         .replace(/\/$/, '')
         .replace(/^\//, '');
+    }
+
+    children(viewName) {
+      let length = this.routes.length
+      this.view = viewName || '';
+
+      if(!length) return this;
+
+      this.parrent = this.routes[length-1];
+
+      return this;
+    }
+
+    getParrents(state = {}) {
+      let parrents = [];
+      let checkParrents = (state) => {
+        if (!state.$parrent) return;
+
+          this.getParrents(state.$parrent);
+          parrents.push(state.$parrent)
+      };
+
+      checkParrents(state);
+
+      return parrents;
+    }
+
+    getParrentFrom(state = {}, level = 0) {
+      if (!state.$parrent && level) return '';
+      if (!state.$parrent && !level) return state;
+
+      return this.getParrentFrom(state.$parrent, level--)
+    }
+
+    up() {
+      let length = this.routes.length
+        , sibling;
+
+      if(!length) return this;
+
+      sibling = this.routes[length - 1];
+
+      this.parrent = this.getParrentFrom(sibling, 2);
+      this.view = this.parrent.$view || '';
+
+      return this;
     }
 
     getCurrent() {
@@ -384,7 +487,10 @@
         current = match ? match[1] : '';
       }
 
-      return current;//this.clearSlashes(current);
+      return current;
+    }
+    getCurrentState(){
+      return this.currentState;
     }
 
     check(current = this.getCurrent()) {
@@ -403,17 +509,14 @@
           match.forEach(function(value, i) {
             routeParams[keys[i].replace(':', '')] = value;
           });
-
+          this.currentState = state;
           this.handler(state, routeParams);
-
           return this;
         }
       });
 
       return this;
     }
-
-  ;
 
     goTo(path = '') {
       this.html5Mode
@@ -424,7 +527,16 @@
     }
 
     register(state = {}) {
-      this.routes.push(state);
+      let copy = Object.assign({}, state);
+
+      copy.$view = this.view;
+
+      if(this.parrent){
+        copy.$parrent = this.parrent;
+        copy.url = `${this.clearSlashes(this.parrent.url)}/${this.clearSlashes(state.url)}`;
+      }
+
+      this.routes.push(copy);
 
       return this;
     }
@@ -455,7 +567,11 @@
   }
 
   /**
-   * Template Engine
+   * @ngdoc Service
+   * @name TemplateEngine
+   *
+   * @description
+   *  Parse templates and interpolates binded values
    */
   class TemplateEngine {
     constructor(http, bootstrapper) {
@@ -468,7 +584,7 @@
     }
 
     escapeHtml(html = '') {
-      let entityMap = {
+      const entityMap = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
@@ -489,8 +605,8 @@
     }
 
     registerTemplate(ctrlName, parrent, html, include) {
-      let div = document.createElement('div')
-        , fragment = document.createDocumentFragment();
+      let div = document.createElement('div');
+      let fragment = document.createDocumentFragment();
 
       div.innerHTML = html;
       parrent.innerHTML = '';
@@ -505,22 +621,21 @@
     }
 
     compile(tmpl = '', arg = '') {
-      let str = tmpl
-        , preComp;
+      let str = tmpl;
+      let preComp;
 
       preComp = str
         .replace(/(^|\r|\n)\t* +| +\t*(\r|\n|$)/g, ' ')
         .replace(/\r|\n|\t|\/\*[\s\S]*?\*\//g, '')
         .replace(/'|\\/g, "\\$&")
         .replace(INTERPOLATE, (m, code) => {
-          let sp = arg ? ' ' : 'this.';
+          let sp = arg ? '' : 'this.';
 
           return `';out+=(${sp}${this.unescape(code)});out+='`;
         });
 
       str = (`let out = '${preComp}';return out;`);
 
-      console.log('string', str)
       str.replace(/\n/g, "\\n")
         .replace(/\t/g, '\\t')
         .replace(/\r/g, "\\r")
@@ -529,14 +644,18 @@
 
       try {
         return new Function(arg,str);
-      } catch (e) {
-        console.log("Could not create a template function: " + str)
-      }
+      } catch (e) {console.warn("Could not create a template function: " + str)}
     }
   }
 
   /**
-   * Http Service
+   * @ngdoc Service
+   * @name Http
+   *
+   * @description
+   *  Service that expose standard HTTP request methods:
+   *  get, put, post, delete, patch, header
+   *  and use promises instead of callbacks
    */
   class Http {
     constructor(){
@@ -545,9 +664,9 @@
 
     init(method) {
       return (options) => new Promise((resolve, reject) => {
-        let request = new XMLHttpRequest()
-          , that = this
-          , {url, params, headers, cache} = options;
+        const request = new XMLHttpRequest();
+        const that = this;
+        let {url, params, headers, cache} = options;
 
         if (cache && that.cachedData.has(url)) return resolve(this.cachedData.get(url));
 
@@ -589,7 +708,11 @@
   }
 
   /**
-   * Bootstrapper
+   * @ngdoc Service
+   * @name Bootstrapper
+   *
+   * @description
+   *  Init the framework, bind templates and dom elements to controllers
    */
   class Bootstrapper {
     constructor(utils) {
@@ -657,7 +780,11 @@
   }
 
   /**
-   * Scope
+   * @ngdoc Service
+   * @name Scope
+   *
+   * @description
+   *  Is used to work with scope/context of the controller
    */
   class Scope {
     setToPath(path, value) {
@@ -670,7 +797,32 @@
   }
 
   /**
-   * Controller class that bind model and view
+   * @ngdoc Service
+   * @name Service
+   *
+   * @description
+   *  Register and hold a service method defined by developer
+   */
+  class Service {
+    constructor(){
+      this.services = new Map();
+    }
+
+    register(name, fn){
+      this.services.set(name, new fn())
+    }
+
+    get(name){
+      return this.services.get(name)
+    }
+  }
+
+  /**
+   * @ngdoc Service
+   * @name Controller
+   *
+   * @description
+   *  Handle business logic and bind the model to the view
    */
   class Controller {
     constructor(name, callback) {
@@ -705,7 +857,6 @@
       proxy = new Proxy(obj, {
         set: (model, prop, value) => {
           let oldValue = model[prop];
-
           if (oldValue === value) return false;
 
           model[prop] = value;
@@ -758,22 +909,25 @@
     };
 
     /**
-     * Sort each element with data-model attribut to it model in scope
-     * @returns {*}
+     * @ngdoc Controller
+     * @name Controller:bindElements
+     *
+     * @description
+     *  Sort each element with data-model attribut to it model in scope
      */
     bindElements(elements, item, alias) {
-      let init = (element, property, type, item = null) => {
+      let init = (element, property, type, item) => {
         let value = item || this.scope.getFromPath(property);
 
         if (!EXCLUDED_TYPES[type] && utils.isUndefined(value)) return false;
+        Binding_Types[type].init.call(this, element, property, value, alias);
 
-        Binding_Types[type].init.call(this, element, property, item);
         !EXCLUDED_TYPES[type] && Binding_Types[type].render.call(this, element, value);
 
         return true;
       };
 
-      let matchText = (elem, type, text, item = null, alias = null, name = null) => {
+      let matchText = (elem, type, text, item, alias, name) => {
         let match = INTERPOLATE.exec(text)
           , prop
           , obj;
@@ -798,8 +952,9 @@
           , data;
 
         if (element.hasAttributes()) {
-          utils.forEachNode(element.attributes, (attr) =>
-            matchText(element, 'attr', attr.value, item, alias, attr.name))
+          utils.forEachNode(element.attributes, (attr) => {
+            matchText(element, 'attr', attr.value, item, alias, attr.name);
+          });
         }
 
         utils.forEachNode(element.childNodes, (child) => {
@@ -818,43 +973,60 @@
             return new logError('Invalid binding type in: ' + type)
           }
 
-          init(element, data[type], type)
+          init(element, data[type], type, item)
         });
       });
     }
   }
 
   /** ***************************************************************** **/
-  let self = {};
+  const self = {};
 
   window.sixth = self;
 
-  let $http = new Http();
+  const $http = new Http();
 
   self.$http = {
-    'get': $http.init('GET'),
-    'post': $http.init('POST'),
-    'put': $http.init('PUT'),
-    'delete': $http.init('DELETE'),
-    'options': $http.init('OPTIONS'),
-    'head': $http.init('HEAD')
+    get: $http.init('GET'),
+    post: $http.init('POST'),
+    put: $http.init('PUT'),
+    delete: $http.init('DELETE'),
+    options: $http.init('OPTIONS'),
+    head: $http.init('HEAD')
   };
 
-  let bootstrapper = new Bootstrapper(utils);
-  let tmplEngine = new TemplateEngine(self.$http, bootstrapper);
+  const bootstrapper = new Bootstrapper(utils);
+  const tmplEngine = new TemplateEngine(self.$http, bootstrapper);
+  const service = new Service();
 
-  self.route = new Router((state, params) => {
-    let element = document.querySelector(`[${DATA_VIEW}]`)
-
+  self.router = new Router((state, params) => {
     tmplEngine.getTemplate(state.templateUrl)
-      .then((response) => tmplEngine.registerTemplate(state.controller, element, response))
-      .catch((error) => { throw error; });
+      .then((response) => {
+        let element = document.querySelector(`[${DATA_VIEW}="${state.$view}"]`);
+
+        if (!element) {
+          return new logError(`Please define view element with attribute (data-view="${state.$view}")`)
+        }
+        tmplEngine.registerTemplate(state.controller, element, response)
+      })
+      .catch((error) => {
+        throw error;
+      });
   });
 
   self.controller = function(name, callback) {
     bootstrapper.registerCtrl(name, new Controller(name, callback));
 
     return this;
-  }
+  };
 
-})(window, document);
+  self.service = function(name, fn) {
+    service.register(name, fn);
+
+    return this;
+  };
+
+  self.inject = function(name) {
+    return service.get(name);
+  };
+}

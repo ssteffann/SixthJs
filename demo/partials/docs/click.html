@@ -1,0 +1,66 @@
+<div class="docs-inner">
+  <div class="block">
+    <h2 class="sub-title text-center">data-bind:click/dblclick</h2>
+
+    <p>
+      Binding type: <code>click</code>and <code>dblclick</code> allows developer to specify a custom
+      action on click or dbclick event.
+      This two types can be attached on input type elements, buttons, selects, textarea and anchors.
+    </p>
+
+    <h3>Usage:</h3>
+    <p><strong>data-bind: click/dblclick</strong> is used as attribute:</p>
+    <div class="code-block">
+        <pre>
+          <code class="language-markup">
+            &lt;button data-bind="{click: funcName }"&gt;Click me &lt;/button&gt;
+            &lt;a href="/address" data-bind="{click: funcName }"&gt;Click link &lt;/a&gt;
+
+            &lt;button data-bind="{dbclick: funcName }"&gt;Click me &lt;/button&gt;
+          </code>
+        </pre>
+    </div>
+
+    <h3>Example:</h3>
+
+    <div class="code-block">
+        <pre>
+          <code class="language-html">
+          &lt;div data-controller="ExampleController" &gt;
+            &lt;button data-bind="{click: myFunction }"&gt;Click me &lt;/button&gt;
+            &lt;button data-bind="{dblclick: myFunction }"&gt;Double click me&lt;/button&gt;
+          &lt;/div&gt;
+
+          &lt;script&gt;
+            sixth.controller('ExampleController', function(){
+              this.counter = 1;
+
+              this.myFunction = function(){
+                this.counter += 1;
+              };
+            });
+          &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+
+    <div class="panel panel-default clearfix">
+      <div class="col-md-12">
+        <button type="button"
+                class="btn btn-primary btn-lg btn-block"
+                data-bind="{click: myFunc }">Click me
+        </button>
+        <button type="button"
+                class="btn btn-success btn-lg btn-block"
+                data-bind="{dblclick: doubleClick }">Double click me
+        </button>
+      </div>
+
+
+      <div class="col-md-12">
+        <h3 class="text-center"> {{ clickAction }} </h3>
+      </div>
+
+    </div>
+  </div>
+</div>

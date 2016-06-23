@@ -1,0 +1,74 @@
+<div class="docs-inner">
+  <div class="block">
+    <h2 class="sub-title text-center">data-bind:if</h2>
+
+    <p>
+      Binding type: <code>if</code> deletes or recreates a portion of the DOM tree
+      base on given property. If property asigned to binding type <code>if</code> is evaluated to
+      false value, then all children elements are removed from from DOM tree, in other case
+      a copy of the elements is inserted in DOM and all bindings are restored.
+    </p>
+
+    <p>
+      Binding type: <code>if</code> differs from <code>CSS</code> class "show" or "hide", because it doesn;t
+      use <code>CSS</code> properties like <code>display: none</code>. It completely removes and
+      recreates the elements in DOM.
+    </p>
+
+    <h3>Usage:</h3>
+    <p><strong>data-bind: if</strong> is used as attribute:</p>
+    <div class="code-block">
+        <pre>
+          <code class="language-markup">
+            &lt;div data-bind="{if: property }"&gt;
+              &lt;textarea&gt;&lt;/textarea&gt;
+              &lt;p&gt;Hello World!&lt;/p&gt;
+            &lt;/div&gt;
+          </code>
+        </pre>
+    </div>
+
+    <h3>Example:</h3>
+
+    <div class="code-block">
+        <pre>
+          <code class="language-html">
+            &lt;div data-controller="ExampleController"&gt;
+              &lt;input type="checkbox" data-bind="{model: property}"/&gt;
+
+              &lt;div data-bind="{if: property }"&gt;
+                &lt;textarea data-bind="{model: action}"&gt;&lt;/textarea&gt;
+                &lt;p&gt;Hello World!&lt;/p&gt;
+                &lt;p&gt;{{ action }}&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;script&gt;
+              sixth.controller('ExampleController', function(){
+                this.property = true;
+              });
+            &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+
+    <div class="panel panel-default clearfix">
+      <div class="col-md-12">
+        <form name="myForm">
+          <div class="col-md-6">
+            <label class="checkbox">
+              <input type="checkbox" data-bind="{model: info}"> Check me
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-md-12" data-bind="{if: info}">
+        <textarea data-bind="{model: clickAction}"></textarea>
+        <p>Hello World!</p>
+        <p>{{ clickAction }}</p>
+      </div>
+
+    </div>
+  </div>
+</div>

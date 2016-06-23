@@ -1,0 +1,29 @@
+<div class="docs-inner">
+    <div class="block">
+        <h2 class="sub-title text-center">data-bind:include</h2>
+
+        <p>
+            Binding type: <code>include</code> make a <code>HTTP</code> get request through
+            <code>Ajax</code> for an external HTML partial, and then include and compiles it. The HTML partial
+            is cached to reduce the number of request. By default all templates are restricted to the same domain.
+            Templates are bound to the parent controller.
+        </p>
+
+        <p>
+            This binding type get as argument url of HTML fragment. The url can be a complete one or relative, if you use
+            relative
+            url it must be relative to root location.
+        </p>
+
+
+        <h3>Usage:</h3>
+
+        <p><strong>data-bind: include</strong> is used as attribute:</p>
+
+        <div class="code-block">
+        <pre>
+          <code class="language-markup">&lt;div data-bind="{include: partials/mytemplate.html }"&gt;&lt;/div&gt; </code>
+        </pre>
+        </div>
+    </div>
+</div>

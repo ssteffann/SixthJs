@@ -1,0 +1,65 @@
+<div class="docs-inner">
+  <div class="block">
+    <h2 class="sub-title text-center">data-bind:text {{}}</h2>
+
+    <p>
+      Binding type: <code>text</code> is not exposed, and is not used with attribute
+      <code>data-bind</code>. As an alias for this binding type is used markup
+      <code>{{ }}</code>. All strings with this markup will be compiled into an
+      interpolation function. This type provides one way binding and cand be used
+      in text contend and also in elements attributes.
+    </p>
+
+    <h3>Usage:</h3>
+    <p><strong>data-bind:text</strong> as markup in text:</p>
+    <div class="code-block">
+        <pre>
+          <code class="language-markup">
+            &lt;p&gt;Hello my name is {{ client.name }}!!!&lt;/p&gt;
+          </code>
+        </pre>
+    </div>
+
+    <p><strong>data-bind:text</strong> as markup in attribute:</p>
+    <div class="code-block">
+        <pre>
+          <code class="language-markup">
+            &lt;a href="clients/{{ client.name }}"&gt;Find me here!&lt;/a&gt;
+          </code>
+        </pre>
+    </div>
+
+    <h3>Example:</h3>
+
+    <div class="code-block">
+        <pre>
+          <code class="language-html">
+            &lt;div data-controller="ExampleController" &gt;
+              &lt;p&gt;Hello my name is {{ client.name }}!!!&lt;/p&gt;
+            &lt;/div&gt;
+
+            &lt;script&gt;
+              sixth.controller('ExampleController', function(){
+                this.client = {
+                  name: 'Borg'
+                };
+              });
+            &lt;/script&gt;
+          </code>
+        </pre>
+    </div>
+
+    <div class="panel panel-default clearfix">
+      <div class="col-md-12">
+        <p>Hello my name is {{ user.name }}!!!</p>
+      </div>
+    </div>
+
+    <div>
+      <p>
+        A more dynamic examble can be found on
+        <a href="#/model">data-bind:model</a> page.
+      </p>
+    </div>
+  </div>
+</div>
